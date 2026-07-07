@@ -1,0 +1,9 @@
+{
+  "name": "app-home-otica",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix crm",
+    "build": "npm run build --prefix crm",
+    "start": "npm run start --prefix crm"
+  }
+}
