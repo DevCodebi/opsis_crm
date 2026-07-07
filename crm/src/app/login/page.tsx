@@ -20,11 +20,13 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const ok = await login(email, password);
+    const result = await login(email, password);
     setLoading(false);
-    if (ok) {
+    if (result.ok) {
       router.push("/");
       router.refresh();
+    } else if (result.error === "network") {
+      setError("Não foi possível conectar. Verifique sua internet e tente novamente.");
     } else {
       setError("E-mail ou senha inválidos. Verifique e tente novamente.");
     }
@@ -89,6 +91,10 @@ export default function LoginPage() {
                     className="input-field w-full"
                     placeholder="seu@email.com"
                     autoComplete="email"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    inputMode="email"
                   />
                 </div>
                 <div>
@@ -101,6 +107,9 @@ export default function LoginPage() {
                     className="input-field w-full"
                     placeholder="••••••••"
                     autoComplete="current-password"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 </div>
                 <button
@@ -147,6 +156,10 @@ export default function LoginPage() {
                     className="input-field w-full"
                     placeholder="seu@email.com"
                     autoComplete="email"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    inputMode="email"
                   />
                 </div>
                 <button

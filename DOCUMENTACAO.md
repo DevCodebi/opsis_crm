@@ -186,10 +186,12 @@ O campo e-mail do cliente é opcional — a ótica pode cadastrar um cliente só
 
 ## Publicação (deploy) — GitHub + Netlify + Supabase
 
-Stack escolhida para o orçamento da loja (custo R$ 0/mês de infraestrutura, sem domínio próprio por enquanto):
+Stack escolhida para o orçamento da loja (custo R$ 0/mês de infraestrutura, sem domínio próprio por enquanto). Repositório: `https://github.com/DevCodebi/opsis_crm`. Site na Netlify: projeto **`glittering-cat-55cd79`** (nome gerado automaticamente pela Netlify — pode ser trocado em Project configuration → General → "Change project name").
 
-1. **Supabase em produção:** o projeto já criado é usado como está (plano Free). Só é preciso confirmar que o `schema.sql` foi executado por completo e que existe pelo menos um usuário `admin` com `status = 'ativo'` na tabela `profiles`.
-2. **Subir o código para o GitHub:** criar um repositório **privado** vazio no GitHub (sem README/licença — para não conflitar com o `git push` inicial), depois no PowerShell:
+### ✅ Já feito (checkpoint — 06/07/2026)
+
+1. **Supabase em produção:** projeto já criado e com o `schema.sql` executado; existe usuário `admin` ativo.
+2. **Código no GitHub:** repositório privado `opsis_crm` criado e o projeto enviado com sucesso.
 
    ```powershell
    cd "C:\Dev\App Home Ótica"
@@ -201,20 +203,29 @@ Stack escolhida para o orçamento da loja (custo R$ 0/mês de infraestrutura, se
    git push -u origin main
    ```
 
-   Ponto de atenção: os comandos `git` (init, add, commit...) precisam ser executados **de dentro da pasta do projeto** (`C:\Dev\App Home Ótica`), nunca de `C:\Dev`. Como o nome da pasta tem espaço e acento, sempre use aspas no `cd`. O `.gitignore` já impede que `.env.local` (chaves do Supabase) seja enviado.
-3. **Criar conta na Netlify** e conectar o repositório do GitHub (Netlify pede autorização de acesso ao GitHub, depois lista os repositórios para escolher).
-4. **Configurar o projeto na Netlify:**
-   - Base directory: `crm`
-   - Build command: `npm run build` (já configurado em `crm/netlify.toml`)
-   - Publish directory: `.next` (idem)
-   - O arquivo `crm/netlify.toml` já ativa o plugin oficial `@netlify/plugin-nextjs`, que a própria Netlify instala automaticamente no primeiro deploy.
-5. **Variáveis de ambiente na Netlify** (Site settings → Environment variables) — copiar os mesmos valores do `crm/.env.local`:
+   **Cuidado que já causou erro:** os comandos `git` (init, add, commit...) precisam ser executados **de dentro da pasta do projeto** (`C:\Dev\App Home Ótica`), nunca de `C:\Dev` — rodar `git init` na pasta errada (um nível acima) faz o Git tratar o projeto inteiro como uma única pasta não rastreada. Se acontecer de novo: apague a pasta oculta `.git` criada no lugar errado (`Remove-Item -Recurse -Force .git` dentro da pasta errada) e repita os comandos de dentro de `C:\Dev\App Home Ótica`. Como o nome da pasta tem espaço e acento, sempre use aspas no `cd`.
+
+3. **Conta Netlify criada** e conectada ao GitHub, projeto `opsis_crm` importado.
+4. **Configuração de build ajustada em Project configuration → Build settings:**
+   - **Runtime:** Next.js (selecionado manualmente no dropdown "Runtime" — ativa o plugin oficial `@netlify/plugin-nextjs`, que já vem referenciado em `crm/netlify.toml`)
+   - **Base directory:** `crm`
+   - **Package directory:** deixado em branco (estava duplicado com o Base directory e fazia a Netlify procurar `crm/crm/`, causando builds que só copiavam arquivos crus sem rodar `npm run build`)
+   - **Build command:** `npm run build`
+   - **Publish directory:** gerenciado automaticamente pelo Next.js Runtime (fica travado/cinza na tela — é esperado, não precisa mexer)
+5. **Variáveis de ambiente cadastradas em Project configuration → Environment variables** (uma variável por vez, usando "Add a variable" → Key = nome da variável, Value = o valor — não confundir os dois campos):
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `NEXT_PUBLIC_SITE_URL` — preencher com a URL que a Netlify vai gerar (ex: `https://home-otica.netlify.app`), para os links de convite/redefinição de senha apontarem para o lugar certo.
-6. **No painel do Supabase** (Authentication → URL Configuration): adicionar a mesma URL da Netlify em "Site URL" e em "Redirect URLs", senão os links de convite/redefinição de senha não funcionam em produção.
-7. **Deploy:** a Netlify já dispara o primeiro build sozinha assim que o site é criado. Deploys seguintes acontecem automaticamente a cada `git push` na branch principal — sem downtime, a versão nova só entra no ar depois de compilar com sucesso.
-8. **Convidar os usuários reais** (admin, gerente, vendedores) pela tela de Usuários, já em produção, e testar os três papéis uma vez seguindo o roteiro de testes descrito em `ESTRATEGIA-SAAS.md`.
+   - `SUPABASE_SERVICE_ROLE_KEY` (marcada como "Contains secret values", por ser a chave mais sensível)
+6. **Bug de tipo corrigido e publicado:** o primeiro build de verdade (já com Next.js Runtime certo) falhou no `produtos/page.tsx:98` — comparação `form.cost !== ""` inválida porque `form.cost` já é `number | undefined` no estado do formulário (o valor nunca é string, o `onChange` já converte com `Number(...)`). Corrigido para `form.cost != null` (mesmo ajuste em `minStock`). Corrigido, commitado e re-deployado.
+7. **Deploy publicado com sucesso:** build de ~1 minuto, todas as etapas completas (Initializing, Building, Deploying, Cleanup, Post-processing), 1 função implantada (a API `/api/users`). Site no ar.
 
-Domínio próprio é opcional nessa fase — o endereço `nome-do-site.netlify.app` gerado automaticamente já tem HTTPS. Se um domínio for comprado depois, basta adicioná-lo em Netlify (Domain settings) e atualizar o `NEXT_PUBLIC_SITE_URL` e as Redirect URLs do Supabase.
+### ⏭️ Próximos passos (retomar daqui)
+
+1. Abrir o site publicado ("Open production deploy" na Netlify) e confirmar que a tela de login carrega sem erro no console.
+2. (Opcional) Renomear o projeto na Netlify para algo mais claro, ex. `opsis-crm` (Project configuration → General → Change project name) — isso muda a URL pública.
+3. Adicionar a 4ª variável de ambiente, **`NEXT_PUBLIC_SITE_URL`**, com a URL final de produção (ex: `https://opsis-crm.netlify.app`), e rodar mais um "Trigger deploy" para aplicar.
+4. No painel do Supabase → **Authentication → URL Configuration**: adicionar essa mesma URL em **"Site URL"** e em **"Redirect URLs"** — sem isso, os links de convite de usuário e redefinição de senha não funcionam em produção.
+5. Convidar os usuários reais (admin + 2 vendedores) pela tela de Usuários, já em produção, e testar os três papéis uma vez seguindo o roteiro de testes descrito em `ESTRATEGIA-SAAS.md`.
+6. Domínio próprio fica para quando fizer sentido — o endereço `*.netlify.app` já tem HTTPS automático. Se comprar um domínio depois, adicionar em Netlify (Domain management) e atualizar `NEXT_PUBLIC_SITE_URL` + Redirect URLs do Supabase.
+
+A partir de agora, todo `git push` na branch `main` dispara um novo deploy automático na Netlify, sem downtime — a versão nova só entra no ar depois de compilar com sucesso.

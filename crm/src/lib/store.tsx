@@ -47,7 +47,7 @@ type Store = {
   resendInvite: (id: string, email: string) => Promise<boolean>;
   sendPasswordReset: (id: string, email: string) => Promise<boolean>;
 
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<boolean>;
 };
@@ -382,11 +382,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // ---------- Auth ----------
   const login = useCallback(
     async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error || !data.user) return false;
-      await loadCurrentUserProfile(data.user.id);
-      await refreshAll();
-      return true;
+      // Normaliza o e-mail (minúsculas, sem espaços nas pontas) — teclados de
+      // celular costumam autocapitalizar a primeira letra ou deixar um
+      // espaço extra ao usar autocomplete, o que fazia o login falhar no
+      // celular mesmo com a senha certa.
+      const normalizedEmail = email.trim().toLowerCase();
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+        if (error || !data.user) {
+          console.error("Falha no login:", error?.message);
+          return { ok: false, error: error?.message };
+        }
+        await loadCurrentUserProfile(data.user.id);
+        await refreshAll();
+        return { ok: true };
+      } catch (err) {
+        console.error("Erro de conexão ao tentar logar:", err);
+        return { ok: false, error: "network" };
+      }
     },
     [loadCurrentUserProfile, refreshAll]
   );
@@ -400,7 +416,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // senha"). Chama o Supabase Auth direto do navegador — não passa pela
   // API admin, pois quem pede ainda não está autenticado.
   const requestPasswordReset = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: `${window.location.origin}/definir-senha`,
     });
     return !error;
