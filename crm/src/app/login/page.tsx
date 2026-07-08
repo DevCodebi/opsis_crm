@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { LogIn } from "lucide-react";
+import { LogIn, Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const { login, initialized, requestPasswordReset } = useStore();
@@ -15,6 +15,7 @@ export default function LoginPage() {
 
   const [loading, setLoading] = useState(false);
   const [modoRecuperar, setModoRecuperar] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,18 +100,29 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[#9ca3af] mb-1">Senha</label>
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="input-field w-full"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="input-field w-full pr-10"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#EAEAEA]"
+                      tabIndex={-1}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
                 <button
                   type="submit"
