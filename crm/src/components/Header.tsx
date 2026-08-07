@@ -3,12 +3,7 @@
 import { useRouter } from "next/navigation";
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useStore } from "@/lib/store";
-
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Administrador",
-  gerente: "Gerente",
-  vendedor: "Vendedor",
-};
+import { ROLE_LABELS } from "@/lib/access";
 
 type HeaderProps = {
   onMenuClick: () => void;

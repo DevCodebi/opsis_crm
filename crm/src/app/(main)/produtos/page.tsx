@@ -5,6 +5,8 @@ import { useStore } from "@/lib/store";
 import type { Product, ProductType } from "@/types";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { ModalLarge } from "@/components/Modal";
+import { RequireRole } from "@/components/RequireRole";
+import { ROLES_GESTAO } from "@/lib/access";
 
 const TYPE_LABELS: Record<ProductType, string> = {
   armacao: "Armação",
@@ -49,6 +51,14 @@ const TREATMENT_TYPES = [
 ];
 
 export default function ProdutosPage() {
+  return (
+    <RequireRole allow={ROLES_GESTAO}>
+      <ProdutosPageContent />
+    </RequireRole>
+  );
+}
+
+function ProdutosPageContent() {
   const { products, addProduct, updateProduct, deleteProduct } = useStore();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);

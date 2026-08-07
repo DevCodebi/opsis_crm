@@ -5,8 +5,18 @@ import { useStore } from "@/lib/store";
 import type { Client } from "@/types";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Modal } from "@/components/Modal";
+import { RequireRole } from "@/components/RequireRole";
+import { ROLES_GESTAO } from "@/lib/access";
 
 export default function ClientesPage() {
+  return (
+    <RequireRole allow={ROLES_GESTAO}>
+      <ClientesPageContent />
+    </RequireRole>
+  );
+}
+
+function ClientesPageContent() {
   const { clients, addClient, updateClient, deleteClient } = useStore();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Client | null>(null);

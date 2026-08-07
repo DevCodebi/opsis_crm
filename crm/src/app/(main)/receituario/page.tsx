@@ -5,6 +5,8 @@ import { useStore } from "@/lib/store";
 import type { Prescription, EyePrescription } from "@/types";
 import { Plus, Pencil, Trash2, Search, FileText, Eye } from "lucide-react";
 import { ModalLarge } from "@/components/Modal";
+import { RequireRole } from "@/components/RequireRole";
+import { ROLES_GESTAO } from "@/lib/access";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -74,6 +76,14 @@ function EyeFields({
 }
 
 export default function ReceituarioPage() {
+  return (
+    <RequireRole allow={ROLES_GESTAO}>
+      <ReceituarioPageContent />
+    </RequireRole>
+  );
+}
+
+function ReceituarioPageContent() {
   const { clients, prescriptions, addPrescription, updatePrescription, deletePrescription } = useStore();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Prescription | null>(null);
