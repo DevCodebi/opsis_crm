@@ -116,10 +116,44 @@ export async function PUT(request: Request) {
     const redirectTo = `${siteUrl(request)}/definir-senha`;
 
     if (action === "resend_invite") {
-      const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, { redirectTo });
-      if (error) {
+      // O primeiro "Convidar" já cria o usuário no Auth. Chamar
+      // inviteUserByEmail de novo retorna "already been registered".
+      // Para reenviar o e-mail a quem ainda está "convidado", usamos o
+      // fluxo de recovery: o Supabase envia o link e a tela /definir-senha
+      // (que já trata PASSWORD_RECOVERY) deixa a pessoa definir a senha.
+      const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        redirectTo,
+      });
+
+      if (!inviteError) {
+        return NextResponse.json({ ok: true });
+      }
+
+      const alreadyRegistered = /already.*(registered|exists|been)/i.test(
+        inviteError.message ?? ""
+      );
+
+      if (!alreadyRegistered) {
         return NextResponse.json(
-          { error: error.message || "Não foi possível reenviar o convite. Se o usuário já ativou a conta, use 'Enviar link de redefinição'." },
+          {
+            error:
+              inviteError.message ||
+              "Não foi possível reenviar o convite. Se o usuário já ativou a conta, use 'Enviar link de redefinição'.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      });
+      if (resetError) {
+        return NextResponse.json(
+          {
+            error:
+              resetError.message ||
+              "Não foi possível reenviar o e-mail. Confira Site URL e Redirect URLs no Supabase.",
+          },
           { status: 400 }
         );
       }

@@ -99,8 +99,8 @@ function UsuariosPageContent() {
   const handleResendInvite = async (u: User) => {
     const ok = await resendInvite(u.id, u.email);
     if (ok) {
-      setActionMessage(`Convite reenviado para ${u.email}.`);
-      setTimeout(() => setActionMessage(""), 4000);
+      setActionMessage(`E-mail de acesso reenviado para ${u.email}. Peça para verificar a caixa de entrada (e o spam).`);
+      setTimeout(() => setActionMessage(""), 5000);
     }
   };
 
