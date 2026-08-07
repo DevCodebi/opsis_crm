@@ -219,11 +219,11 @@ export default function DashboardPage() {
             Resumo do período e indicadores do negócio.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
           <select
             value={periodKey}
             onChange={(e) => setPeriodKey(e.target.value as PeriodKey)}
-            className="input-field text-sm w-auto"
+            className="input-field text-sm w-full sm:w-auto"
           >
             <option value="7">Últimos 7 dias</option>
             <option value="30">Últimos 30 dias</option>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
           <select
             value={sellerFilter}
             onChange={(e) => setSellerFilter(e.target.value)}
-            className="input-field text-sm w-auto min-w-[140px]"
+            className="input-field text-sm w-full sm:w-auto sm:min-w-[140px]"
           >
             <option value="">Todos os vendedores</option>
             {vendedoresOptions.map((u) => (
@@ -240,11 +240,11 @@ export default function DashboardPage() {
             ))}
           </select>
           <div className="flex gap-2">
-            <button type="button" onClick={exportCSV} className="btn-secondary text-sm flex items-center gap-1.5">
+            <button type="button" onClick={exportCSV} className="btn-secondary text-sm flex-1 sm:flex-none flex items-center justify-center gap-1.5">
               <Download className="w-4 h-4" />
               CSV
             </button>
-            <button type="button" onClick={exportXLSX} className="btn-primary text-sm flex items-center gap-1.5">
+            <button type="button" onClick={exportXLSX} className="btn-primary text-sm flex-1 sm:flex-none flex items-center justify-center gap-1.5">
               <Download className="w-4 h-4" />
               XLSX
             </button>

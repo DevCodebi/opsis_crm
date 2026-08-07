@@ -386,7 +386,79 @@ export default function VendasPage() {
         />
       </div>
 
-      <div className="card overflow-hidden p-0 rounded-xl">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((s) => (
+          <div key={s.id} className="card p-4 rounded-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-home-light font-medium truncate">{s.clientName}</p>
+                <p className="text-home-muted text-xs mt-0.5">
+                  {format(new Date(s.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                  {s.sellerName ? ` · ${s.sellerName}` : ""}
+                </p>
+                <p className="text-home-light font-semibold mt-1">
+                  R$ {s.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="text-home-muted text-xs">
+                    {s.paymentMethod ? PAYMENT_LABELS[s.paymentMethod] : "—"}
+                  </span>
+                  <span
+                    className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium ${
+                      s.status === "entregue"
+                        ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                        : s.status === "pago"
+                          ? "bg-home-blue/25 text-home-light border border-home-blue/40"
+                          : s.status === "cancelado"
+                            ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                            : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                    }`}
+                  >
+                    {STATUS_LABELS[s.status]}
+                  </span>
+                </div>
+              </div>
+              <div className="flex shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setViewing(s)}
+                  className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                  aria-label="Visualizar venda"
+                >
+                  <Eye className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openEdit(s)}
+                  className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                  aria-label="Editar venda"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
+                {canDeleteSale && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(s.id)}
+                    className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
+                    aria-label="Excluir venda"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="py-12 text-center text-home-muted card">
+            {search ? "Nenhuma venda encontrada." : "Nenhuma venda registrada."}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: tabela */}
+      <div className="hidden md:block card overflow-hidden p-0 rounded-xl">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

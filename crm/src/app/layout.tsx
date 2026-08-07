@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import "./globals.css";
@@ -12,6 +12,12 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Home Ótica · Ópsis CRM",
   description: "Sistema de gestão e vendas para ótica, por Ópsis CRM",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#1A1D25",
 };
 
 export default function RootLayout({
