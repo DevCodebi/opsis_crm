@@ -15,15 +15,16 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { ROLES_GESTAO, ROLES_USUARIOS, ROLES_VENDAS } from "@/lib/access";
 import type { UserRole } from "@/types";
 
 const nav: { href: string; label: string; icon: typeof LayoutDashboard; roles: UserRole[] }[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["admin", "gerente", "vendedor"] },
-  { href: "/clientes", label: "Clientes", icon: Users, roles: ["admin", "gerente"] },
-  { href: "/produtos", label: "Produtos", icon: Package, roles: ["admin", "gerente"] },
-  { href: "/receituario", label: "Receituário", icon: FileText, roles: ["admin", "gerente"] },
-  { href: "/vendas", label: "Vendas", icon: ShoppingCart, roles: ["admin", "gerente", "vendedor"] },
-  { href: "/usuarios", label: "Usuários", icon: UserCog, roles: ["admin"] },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ROLES_VENDAS },
+  { href: "/clientes", label: "Clientes", icon: Users, roles: ROLES_GESTAO },
+  { href: "/produtos", label: "Produtos", icon: Package, roles: ROLES_GESTAO },
+  { href: "/receituario", label: "Receituário", icon: FileText, roles: ROLES_GESTAO },
+  { href: "/vendas", label: "Vendas", icon: ShoppingCart, roles: ROLES_VENDAS },
+  { href: "/usuarios", label: "Usuários", icon: UserCog, roles: ROLES_USUARIOS },
 ];
 
 type SidebarProps = {

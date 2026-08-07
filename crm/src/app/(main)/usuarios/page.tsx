@@ -1,17 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useStore } from "@/lib/store";
 import type { User, UserRole, UserStatus } from "@/types";
 import { Plus, Pencil, Trash2, Search, UserCog, Mail, KeyRound } from "lucide-react";
 import { Modal } from "@/components/Modal";
-
-const ROLE_LABELS: Record<UserRole, string> = {
-  admin: "Administrador",
-  gerente: "Gerente",
-  vendedor: "Vendedor",
-};
+import { RequireRole } from "@/components/RequireRole";
+import { ROLE_LABELS, ROLES_USUARIOS } from "@/lib/access";
 
 const STATUS_LABELS: Record<UserStatus, string> = {
   convidado: "Convite pendente",
@@ -26,19 +21,16 @@ const STATUS_CLASSES: Record<UserStatus, string> = {
 };
 
 export default function UsuariosPage() {
-  const router = useRouter();
+  return (
+    <RequireRole allow={ROLES_USUARIOS}>
+      <UsuariosPageContent />
+    </RequireRole>
+  );
+}
+
+function UsuariosPageContent() {
   const { users, addUser, updateUser, deleteUser, resendInvite, sendPasswordReset, currentUser } = useStore();
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    if (currentUser && currentUser.role !== "admin") {
-      router.replace("/");
-    }
-  }, [currentUser, router]);
-
-  if (currentUser && currentUser.role !== "admin") {
-    return null;
-  }
   const [editing, setEditing] = useState<User | null>(null);
   const [form, setForm] = useState<Partial<User>>({});
   const [showForm, setShowForm] = useState(false);

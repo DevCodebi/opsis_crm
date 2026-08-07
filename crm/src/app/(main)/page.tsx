@@ -25,12 +25,13 @@ import {
 import { format, subDays, startOfDay, isWithinInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as XLSX from "xlsx";
+import { isVendedor as roleIsVendedor } from "@/lib/access";
 
 type PeriodKey = "7" | "30" | "90";
 
 export default function DashboardPage() {
   const { clients, products, sales, users, currentUser } = useStore();
-  const isVendedor = currentUser?.role === "vendedor";
+  const isVendedor = roleIsVendedor(currentUser?.role);
   const [periodKey, setPeriodKey] = useState<PeriodKey>("30");
   const [sellerFilter, setSellerFilter] = useState<string>("");
 

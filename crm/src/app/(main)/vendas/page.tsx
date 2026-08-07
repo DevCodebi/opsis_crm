@@ -9,6 +9,7 @@ import { format, addMonths, parseISO, differenceInDays, isBefore, startOfDay } f
 import { ptBR } from "date-fns/locale";
 import { printSaleReceipt, exportSaleReceiptToPdf } from "@/lib/salePrint";
 import { PrescriptionSummary } from "@/components/PrescriptionSummary";
+import { isGerenteOrAdmin, isVendedor } from "@/lib/access";
 
 const STATUS_LABELS: Record<Sale["status"], string> = {
   pendente: "Pendente",
@@ -99,11 +100,15 @@ export default function VendasPage() {
 
   // Excluir venda é restrito a admin/gerente — espelha a política de RLS
   // no banco (vendedor não tem permissão de DELETE em sales).
-  const canDeleteSale = currentUser?.role === "admin" || currentUser?.role === "gerente";
+  const canDeleteSale = isGerenteOrAdmin(currentUser?.role);
+  const vendedorLocked = isVendedor(currentUser?.role);
 
-  const filtered = sales.filter((s) =>
-    s.clientName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = sales.filter((s) => {
+    if (vendedorLocked && currentUser?.id && s.sellerId !== currentUser.id) {
+      return false;
+    }
+    return s.clientName.toLowerCase().includes(search.toLowerCase());
+  });
 
   const addItem = () => {
     const first = products[0];
@@ -160,9 +165,14 @@ export default function VendasPage() {
   };
 
   const openEdit = (s: Sale) => {
+    // Vendedor só edita as próprias vendas
+    if (vendedorLocked && currentUser?.id && s.sellerId !== currentUser.id) {
+      alert("Você só pode editar as suas próprias vendas.");
+      return;
+    }
     setForm({
       clientId: s.clientId,
-      sellerId: s.sellerId ?? currentUser?.id ?? "",
+      sellerId: vendedorLocked ? (currentUser?.id ?? "") : (s.sellerId ?? currentUser?.id ?? ""),
       prescriptionId: s.prescriptionId ?? "",
       paymentMethod: s.paymentMethod ?? "dinheiro",
       boletoNumParcelas: s.boletoParcelas?.length ?? 1,
@@ -208,7 +218,8 @@ export default function VendasPage() {
         }
       }
 
-      const seller = vendedoresOptions.find((u) => u.id === form.sellerId);
+      const effectiveSellerId = vendedorLocked ? (currentUser?.id ?? "") : form.sellerId;
+      const seller = vendedoresOptions.find((u) => u.id === effectiveSellerId) ?? currentUser ?? undefined;
       const items: SaleItem[] = form.items.map((it) => {
         const p = products.find((x) => x.id === it.productId);
         const total = it.quantity * it.unitPrice;
@@ -224,7 +235,7 @@ export default function VendasPage() {
       const payload = {
         clientId: form.clientId,
         clientName: client.name,
-        sellerId: form.sellerId || undefined,
+        sellerId: effectiveSellerId || undefined,
         sellerName: seller?.name,
         paymentMethod: "boleto" as const,
         boletoParcelas,
@@ -247,7 +258,8 @@ export default function VendasPage() {
       return;
     }
 
-    const seller = vendedoresOptions.find((u) => u.id === form.sellerId);
+    const effectiveSellerId = vendedorLocked ? (currentUser?.id ?? "") : form.sellerId;
+    const seller = vendedoresOptions.find((u) => u.id === effectiveSellerId) ?? currentUser ?? undefined;
 
     const items: SaleItem[] = form.items.map((it) => {
       const p = products.find((x) => x.id === it.productId);
@@ -264,7 +276,7 @@ export default function VendasPage() {
     const payload = {
       clientId: form.clientId,
       clientName: client.name,
-      sellerId: form.sellerId || undefined,
+      sellerId: effectiveSellerId || undefined,
       sellerName: seller?.name,
       paymentMethod: form.paymentMethod,
       boletoParcelas: undefined as BoletoParcela[] | undefined,
@@ -779,17 +791,26 @@ export default function VendasPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-home-muted mb-1">Vendedor *</label>
-                  <select
-                    required
-                    value={form.sellerId}
-                    onChange={(e) => setForm((f) => ({ ...f, sellerId: e.target.value }))}
-                    className="input-field"
-                  >
-                    <option value="">Selecione o vendedor</option>
-                    {vendedoresOptions.map((u) => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
-                    ))}
-                  </select>
+                  {vendedorLocked ? (
+                    <input
+                      type="text"
+                      readOnly
+                      value={currentUser?.name ?? ""}
+                      className="input-field opacity-80"
+                    />
+                  ) : (
+                    <select
+                      required
+                      value={form.sellerId}
+                      onChange={(e) => setForm((f) => ({ ...f, sellerId: e.target.value }))}
+                      className="input-field"
+                    >
+                      <option value="">Selecione o vendedor</option>
+                      {vendedoresOptions.map((u) => (
+                        <option key={u.id} value={u.id}>{u.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
