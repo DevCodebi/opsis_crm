@@ -167,7 +167,70 @@ export default function ReceituarioPage() {
         />
       </div>
 
-      <div className="card overflow-hidden p-0 rounded-xl">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((p) => (
+          <div key={p.id} className="card p-4 rounded-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-home-light font-medium truncate">{getClientName(p.clientId)}</p>
+                <p className="text-home-muted text-sm mt-0.5 truncate">
+                  {p.doctorName} · {format(new Date(p.date), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+                <p className="text-home-muted text-xs mt-2 leading-relaxed">
+                  OD:{" "}
+                  {[p.od.sph, p.od.cyl, p.od.axis, p.od.add].filter(Boolean).length
+                    ? `SPH ${p.od.sph ?? "—"} CYL ${p.od.cyl ?? "—"} AX ${p.od.axis ?? "—"} ADD ${p.od.add ?? "—"}`
+                    : "—"}
+                </p>
+                <p className="text-home-muted text-xs leading-relaxed">
+                  OS:{" "}
+                  {[p.os.sph, p.os.cyl, p.os.axis, p.os.add].filter(Boolean).length
+                    ? `SPH ${p.os.sph ?? "—"} CYL ${p.os.cyl ?? "—"} AX ${p.os.axis ?? "—"} ADD ${p.os.add ?? "—"}`
+                    : "—"}
+                </p>
+                <p className="text-home-muted text-xs mt-1">
+                  PD: {p.pd != null ? `${p.pd} mm` : "—"}
+                </p>
+              </div>
+              <div className="flex shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setViewing(p)}
+                  className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                  aria-label="Visualizar receita"
+                >
+                  <Eye className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openEdit(p)}
+                  className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                  aria-label="Editar receita"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(p.id)}
+                  className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
+                  aria-label="Excluir receita"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="py-12 text-center text-home-muted card">
+            {search ? "Nenhum receituário encontrado." : "Nenhum receituário cadastrado."}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: tabela */}
+      <div className="hidden md:block card overflow-hidden p-0 rounded-xl">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

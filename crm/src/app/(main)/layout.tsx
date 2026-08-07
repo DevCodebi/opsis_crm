@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { useStore } from "@/lib/store";
+
+const SIDEBAR_COLLAPSED_KEY = "opsis-sidebar-collapsed";
 
 export default function MainLayout({
   children,
@@ -13,6 +15,32 @@ export default function MainLayout({
 }) {
   const { currentUser, initialized } = useStore();
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const openMenu = useCallback(() => setMenuOpen(true), []);
+
+  // Restaura preferência de sidebar recolhida
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      if (saved === "1") setCollapsed(true);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleCollapse = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (initialized && !currentUser) {
@@ -30,13 +58,18 @@ export default function MainLayout({
 
   return (
     <div className="flex min-h-screen w-full bg-[#1A1D25]">
-      <Sidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-1 p-6 overflow-auto animate-fade-in bg-[#1A1D25]">
+      <Sidebar
+        open={menuOpen}
+        onClose={closeMenu}
+        collapsed={collapsed}
+        onToggleCollapse={toggleCollapse}
+      />
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+        <Header onMenuClick={openMenu} onToggleSidebar={toggleCollapse} sidebarCollapsed={collapsed} />
+        <main className="flex-1 p-4 sm:p-6 overflow-auto animate-fade-in bg-[#1A1D25]">
           {children}
         </main>
-        <footer className="px-6 py-3 border-t border-[rgba(93,112,139,0.2)] text-center">
+        <footer className="px-4 sm:px-6 py-3 border-t border-[rgba(93,112,139,0.2)] text-center">
           <span className="text-[11px] text-[#5d708b]">Home Ótica · Ópsis CRM</span>
         </footer>
       </div>

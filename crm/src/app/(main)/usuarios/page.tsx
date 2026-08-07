@@ -151,7 +151,74 @@ export default function UsuariosPage() {
         />
       </div>
 
-      <div className="card overflow-hidden p-0 rounded-xl">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((u) => (
+          <div key={u.id} className="card p-4 rounded-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-home-light font-medium truncate">{u.name}</p>
+                <p className="text-home-muted text-sm truncate mt-0.5">{u.email}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="text-home-muted text-xs">{ROLE_LABELS[u.role]}</span>
+                  <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium ${STATUS_CLASSES[u.status]}`}>
+                    {STATUS_LABELS[u.status]}
+                  </span>
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap justify-end">
+                {u.status === "convidado" && (
+                  <button
+                    type="button"
+                    onClick={() => handleResendInvite(u)}
+                    title="Reenviar convite"
+                    className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                    aria-label="Reenviar convite"
+                  >
+                    <Mail className="w-5 h-5" />
+                  </button>
+                )}
+                {u.status === "ativo" && (
+                  <button
+                    type="button"
+                    onClick={() => handleSendReset(u)}
+                    title="Enviar link de redefinição de senha"
+                    className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                    aria-label="Redefinir senha"
+                  >
+                    <KeyRound className="w-5 h-5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => openEdit(u)}
+                  className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                  aria-label="Editar usuário"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(u.id)}
+                  disabled={u.id === currentUser?.id}
+                  className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Excluir usuário"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="py-12 text-center text-home-muted card">
+            {search ? "Nenhum usuário encontrado." : "Nenhum usuário cadastrado."}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: tabela */}
+      <div className="hidden md:block card overflow-hidden p-0 rounded-xl">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

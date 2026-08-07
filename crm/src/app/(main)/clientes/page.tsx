@@ -103,7 +103,51 @@ export default function ClientesPage() {
         />
       </div>
 
-      <div className="card overflow-hidden p-0 rounded-xl">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((c) => (
+          <div key={c.id} className="card p-4 rounded-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-home-light font-medium truncate">{c.name}</p>
+                <p className="text-home-muted text-sm mt-0.5">{c.phone}</p>
+                <p className="text-home-muted text-sm truncate">{c.email || "—"}</p>
+                <p className="text-home-muted text-xs mt-1">
+                  {c.birthDate ? new Date(c.birthDate).toLocaleDateString("pt-BR") : "—"}
+                  {" · "}
+                  {c.sex === "M" ? "Masculino" : c.sex === "F" ? "Feminino" : c.sex === "Outro" ? "Outro" : "—"}
+                </p>
+              </div>
+              <div className="flex shrink-0">
+                <button
+                  type="button"
+                  onClick={() => openEdit(c)}
+                  className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                  aria-label="Editar cliente"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(c.id)}
+                  className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
+                  aria-label="Excluir cliente"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="py-12 text-center text-home-muted card">
+            {search ? "Nenhum cliente encontrado." : "Nenhum cliente cadastrado."}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: tabela */}
+      <div className="hidden md:block card overflow-hidden p-0 rounded-xl">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

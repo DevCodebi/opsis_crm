@@ -140,7 +140,58 @@ export default function ProdutosPage() {
         />
       </div>
 
-      <div className="card overflow-hidden p-0 rounded-xl">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((p) => (
+          <div key={p.id} className="card p-4 rounded-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-home-light font-medium truncate">{p.name}</p>
+                <p className="text-home-muted text-sm mt-0.5">
+                  {TYPE_LABELS[p.type]}
+                  {p.sku ? ` · ${p.sku}` : ""}
+                </p>
+                <p className="text-home-light font-semibold mt-1">
+                  R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-home-muted text-xs mt-1">
+                  Estoque: {p.stock}
+                  {p.minStock != null ? ` · Mín: ${p.minStock}` : ""}
+                  {p.cost != null
+                    ? ` · Custo: R$ ${p.cost.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                    : ""}
+                </p>
+              </div>
+              <div className="flex shrink-0">
+                <button
+                  type="button"
+                  onClick={() => openEdit(p)}
+                  className="p-2.5 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                  aria-label="Editar produto"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(p.id)}
+                  className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
+                  aria-label="Excluir produto"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="py-12 text-center text-home-muted card">
+            {search ? "Nenhum produto encontrado." : "Nenhum produto cadastrado."}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: tabela */}
+      <div className="hidden md:block card overflow-hidden p-0 rounded-xl">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
