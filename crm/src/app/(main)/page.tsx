@@ -30,8 +30,9 @@ type PeriodKey = "7" | "30" | "90";
 
 export default function DashboardPage() {
   const { clients, products, sales, users, currentUser } = useStore();
+  const isVendedor = currentUser?.role === "vendedor";
   const [periodKey, setPeriodKey] = useState<PeriodKey>("30");
-  const [sellerFilter, setSellerFilter] = useState<string>(() => currentUser?.role === "vendedor" ? (currentUser?.id ?? "") : "");
+  const [sellerFilter, setSellerFilter] = useState<string>("");
 
   const periodDays = Number(periodKey);
   const startDate = useMemo(() => subDays(new Date(), periodDays), [periodDays]);
@@ -43,11 +44,14 @@ export default function DashboardPage() {
         s.status !== "cancelado" &&
         isWithinInterval(parseISO(s.createdAt), { start: startDate, end: endDate })
     );
-    if (sellerFilter) {
+    // Vendedor: sempre só as próprias vendas
+    if (isVendedor && currentUser?.id) {
+      list = list.filter((s) => s.sellerId === currentUser.id);
+    } else if (sellerFilter) {
       list = list.filter((s) => s.sellerId === sellerFilter);
     }
     return list;
-  }, [sales, startDate, endDate, sellerFilter]);
+  }, [sales, startDate, endDate, sellerFilter, isVendedor, currentUser?.id]);
 
   const stats = useMemo(() => {
     const totalVendas = filteredSales.length;
@@ -207,6 +211,50 @@ export default function DashboardPage() {
 
     XLSX.writeFile(wb, `relatorio-vendas-${format(new Date(), "yyyy-MM-dd")}.xlsx`);
   };
+
+  // Dashboard do vendedor: só o total das próprias vendas no período
+  if (isVendedor) {
+    return (
+      <div className="space-y-8 animate-fade-in max-w-7xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-[#EAEAEA]">
+              Bem-vindo(a), {currentUser?.name ?? "Usuário"}
+            </h1>
+            <p className="text-[#9ca3af] text-sm mt-1">
+              Acompanhe o total das suas vendas no período.
+            </p>
+          </div>
+          <select
+            value={periodKey}
+            onChange={(e) => setPeriodKey(e.target.value as PeriodKey)}
+            className="input-field text-sm w-full sm:w-auto"
+          >
+            <option value="7">Últimos 7 dias</option>
+            <option value="30">Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+          </select>
+        </div>
+
+        <div className="max-w-sm">
+          <div className="card-glow">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[#9ca3af] text-sm font-medium">Total de Vendas</p>
+                <p className="text-3xl font-bold text-[#344B6F] mt-1">+{stats.totalVendas}</p>
+                <p className="text-[#9ca3af] text-xs mt-2">
+                  Somente as vendas registradas por você
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-[#344B6F]/25 flex items-center justify-center">
+                <ShoppingCart className="w-5 h-5 text-[#344B6F]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl">
