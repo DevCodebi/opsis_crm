@@ -38,6 +38,12 @@ function siteUrl(request: Request) {
   return process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
 }
 
+async function ensureEmailConfirmed(userId: string) {
+  // Sem e-mail confirmado, o Supabase costuma NÃO enviar recovery.
+  // Convidados ficam nesse estado — confirmamos antes de disparar o e-mail.
+  return supabaseAdmin.auth.admin.updateUserById(userId, { email_confirm: true });
+}
+
 // Convida um funcionário por e-mail: cria o usuário no Supabase Auth (sem
 // senha) e dispara automaticamente o e-mail de convite com um link de
 // ativação. O próprio funcionário define a senha na primeira vez que entra
@@ -114,56 +120,31 @@ export async function PUT(request: Request) {
     }
 
     const redirectTo = `${siteUrl(request)}/definir-senha`;
+    const normalizedEmail = String(email).trim().toLowerCase();
 
-    if (action === "resend_invite") {
-      // O primeiro "Convidar" já cria o usuário no Auth. Chamar
-      // inviteUserByEmail de novo retorna "already been registered".
-      // Para reenviar o e-mail a quem ainda está "convidado", usamos o
-      // fluxo de recovery: o Supabase envia o link e a tela /definir-senha
-      // (que já trata PASSWORD_RECOVERY) deixa a pessoa definir a senha.
-      const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        redirectTo,
-      });
-
-      if (!inviteError) {
-        return NextResponse.json({ ok: true });
-      }
-
-      const alreadyRegistered = /already.*(registered|exists|been)/i.test(
-        inviteError.message ?? ""
-      );
-
-      if (!alreadyRegistered) {
+    if (action === "resend_invite" || action === "send_reset") {
+      const { error: confirmError } = await ensureEmailConfirmed(id);
+      if (confirmError) {
         return NextResponse.json(
-          {
-            error:
-              inviteError.message ||
-              "Não foi possível reenviar o convite. Se o usuário já ativou a conta, use 'Enviar link de redefinição'.",
-          },
+          { error: confirmError.message || "Não foi possível preparar o usuário para receber o e-mail." },
           { status: 400 }
         );
       }
 
-      const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+      const { error } = await supabaseAdmin.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo,
       });
-      if (resetError) {
-        return NextResponse.json(
-          {
-            error:
-              resetError.message ||
-              "Não foi possível reenviar o e-mail. Confira Site URL e Redirect URLs no Supabase.",
-          },
-          { status: 400 }
-        );
-      }
-      return NextResponse.json({ ok: true });
-    }
-
-    if (action === "send_reset") {
-      const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, { redirectTo });
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        const rateLimited = /rate|limit|seconds|too many/i.test(error.message ?? "");
+        return NextResponse.json(
+          {
+            error: rateLimited
+              ? "Limite de e-mails do Supabase atingido. Aguarde alguns minutos e tente de novo (ou configure SMTP próprio no painel Auth → SMTP)."
+              : error.message ||
+                "Não foi possível enviar o e-mail. Confira Site URL/Redirect URLs e a caixa de spam.",
+          },
+          { status: 400 }
+        );
       }
       return NextResponse.json({ ok: true });
     }

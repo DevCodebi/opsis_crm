@@ -99,17 +99,21 @@ function UsuariosPageContent() {
   const handleResendInvite = async (u: User) => {
     const ok = await resendInvite(u.id, u.email);
     if (ok) {
-      setActionMessage(`E-mail de acesso reenviado para ${u.email}. Peça para verificar a caixa de entrada (e o spam).`);
-      setTimeout(() => setActionMessage(""), 5000);
+      setActionMessage(
+        `E-mail enviado para ${u.email}. Se não chegar em 1–2 minutos, confira o spam. No plano gratuito do Supabase o envio é limitado — aguarde ou configure SMTP.`
+      );
+      setTimeout(() => setActionMessage(""), 8000);
     }
   };
 
   const handleSendReset = async (u: User) => {
-    if (!confirm(`Enviar um link de redefinição de senha para ${u.email}?`)) return;
+    if (!confirm(`Enviar um e-mail de redefinição de senha para ${u.email}?`)) return;
     const ok = await sendPasswordReset(u.id, u.email);
     if (ok) {
-      setActionMessage(`Link de redefinição enviado para ${u.email}.`);
-      setTimeout(() => setActionMessage(""), 4000);
+      setActionMessage(
+        `E-mail de redefinição enviado para ${u.email}. Confira também a pasta de spam.`
+      );
+      setTimeout(() => setActionMessage(""), 8000);
     }
   };
 
