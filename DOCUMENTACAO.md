@@ -109,10 +109,10 @@ Todas as colunas usam nomes em camelCase (entre aspas no SQL) para bater 1:1 com
 | Papel | Acesso |
 |---|---|
 | `admin` | Tudo, incluindo a tela de Usuários |
-| `gerente` | Dashboard, Clientes, Produtos, Receituário, Vendas (todas) |
-| `vendedor` | Dashboard (filtrado nas próprias vendas) e Vendas (só as que ele mesmo registrou) |
+| `gerente` | Dashboard completo, Clientes, Produtos, Receituário, Vendas (todas) |
+| `vendedor` | Dashboard **somente** com o total das próprias vendas; Vendas só as que ele registrou |
 
-O controle de menu fica em `src/components/Sidebar.tsx`, o bloqueio de rota fica em cada página que precisa (ex: `usuarios/page.tsx` redireciona quem não é admin) — e, desde a última revisão, **o mesmo controle existe no banco via RLS** (ver seção abaixo), então não depende só da interface para valer.
+Regras centralizadas em `crm/src/lib/access.ts`. O menu usa essas regras em `Sidebar.tsx`. Páginas sensíveis são protegidas por `RequireRole` (bloqueia URL direta): Clientes/Produtos/Receituário → `admin`/`gerente`; Usuários → só `admin`. Na tela de Vendas, o vendedor tem o campo vendedor travado nele e não exclui vendas. **O mesmo controle existe no banco via RLS** (ver seção abaixo).
 
 ## Segurança (Row Level Security)
 
@@ -184,48 +184,79 @@ O campo e-mail do cliente é opcional — a ótica pode cadastrar um cliente só
 - Se aparecer erro `Module not found` para algum pacote, confirme que o `npm install` foi rodado **dentro da pasta `crm`** (e não na raiz do projeto).
 - Se o Next.js travar por causa de cache corrompido após mover a pasta do projeto, apague a pasta `crm/.next` e rode `npm run dev` novamente.
 
+## Layout responsivo e sidebar
+
+- **Mobile:** menu hambúrguer + drawer com overlay; listagens em cards; modais adaptados à tela.
+- **Desktop:** sidebar **retrátil** (expandida com labels / recolhida só ícones), preferência salva em `localStorage` (`opsis-sidebar-collapsed`).
+- Viewport meta em `crm/src/app/layout.tsx`.
+
+## Convites e e-mail de acesso
+
+Fluxo: admin em **Usuários** → Convidar → Supabase Auth envia e-mail → usuário define senha em `/definir-senha`.
+
+- API: `crm/src/app/api/users/route.ts` (`inviteUserByEmail` no primeiro convite).
+- **Reenvio / redefinição:** confirma o e-mail do usuário no Auth (`email_confirm: true`) e dispara `resetPasswordForEmail` para `/definir-senha` — necessário porque convidados costumam ficar sem e-mail confirmado e o Supabase não envia recovery nesse estado.
+- E-mail padrão do Supabase (plano free) é limitado; para produção estável usa-se **SMTP próprio (Resend)** — ver checkpoint abaixo.
+
 ## Publicação (deploy) — GitHub + Netlify + Supabase
 
-Stack escolhida para o orçamento da loja (custo R$ 0/mês de infraestrutura, sem domínio próprio por enquanto). Repositório: `https://github.com/DevCodebi/opsis_crm`. Site na Netlify: projeto **`glittering-cat-55cd79`** (nome gerado automaticamente pela Netlify — pode ser trocado em Project configuration → General → "Change project name").
+Stack: Next.js na **Netlify**, dados/auth no **Supabase**, código no GitHub.  
+Repositório: `https://github.com/DevCodebi/opsis_crm`.
 
-### ✅ Já feito (checkpoint — 06/07/2026)
+| URL | Uso |
+|---|---|
+| `https://opsis-crm.netlify.app` | Site Netlify (sempre HTTPS) |
+| `https://opsiscrm.com.br` | Domínio próprio (Hostinger DNS → Netlify); HTTPS em provisionamento |
+| `glittering-cat-55cd79.netlify.app` | **Obsoleto** (404) — não usar |
 
-1. **Supabase em produção:** projeto já criado e com o `schema.sql` executado; existe usuário `admin` ativo.
-2. **Código no GitHub:** repositório privado `opsis_crm` criado e o projeto enviado com sucesso.
+Build Netlify: Base directory `crm`, Runtime Next.js, `npm run build`. Variáveis: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Todo push na `main` redeploya automaticamente.
 
-   ```powershell
-   cd "C:\Dev\App Home Ótica"
-   git init
-   git add .
-   git commit -m "Versão inicial do Ópsis CRM"
-   git branch -M main
-   git remote add origin https://github.com/DevCodebi/opsis_crm.git
-   git push -u origin main
-   ```
+### ✅ Checkpoint histórico — 06/07/2026 (primeira publicação)
 
-   **Cuidado que já causou erro:** os comandos `git` (init, add, commit...) precisam ser executados **de dentro da pasta do projeto** (`C:\Dev\App Home Ótica`), nunca de `C:\Dev` — rodar `git init` na pasta errada (um nível acima) faz o Git tratar o projeto inteiro como uma única pasta não rastreada. Se acontecer de novo: apague a pasta oculta `.git` criada no lugar errado (`Remove-Item -Recurse -Force .git` dentro da pasta errada) e repita os comandos de dentro de `C:\Dev\App Home Ótica`. Como o nome da pasta tem espaço e acento, sempre use aspas no `cd`.
+Supabase + schema, GitHub, Netlify, variáveis de ambiente, primeiro deploy ok, correção de tipo em produtos. Detalhes do setup inicial e cuidados com `git` na pasta certa permanecem válidos (rodar git de dentro de `App Home Ótica`, não de `C:\Dev`).
 
-3. **Conta Netlify criada** e conectada ao GitHub, projeto `opsis_crm` importado.
-4. **Configuração de build ajustada em Project configuration → Build settings:**
-   - **Runtime:** Next.js (selecionado manualmente no dropdown "Runtime" — ativa o plugin oficial `@netlify/plugin-nextjs`, que já vem referenciado em `crm/netlify.toml`)
-   - **Base directory:** `crm`
-   - **Package directory:** deixado em branco (estava duplicado com o Base directory e fazia a Netlify procurar `crm/crm/`, causando builds que só copiavam arquivos crus sem rodar `npm run build`)
-   - **Build command:** `npm run build`
-   - **Publish directory:** gerenciado automaticamente pelo Next.js Runtime (fica travado/cinza na tela — é esperado, não precisa mexer)
-5. **Variáveis de ambiente cadastradas em Project configuration → Environment variables** (uma variável por vez, usando "Add a variable" → Key = nome da variável, Value = o valor — não confundir os dois campos):
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (marcada como "Contains secret values", por ser a chave mais sensível)
-6. **Bug de tipo corrigido e publicado:** o primeiro build de verdade (já com Next.js Runtime certo) falhou no `produtos/page.tsx:98` — comparação `form.cost !== ""` inválida porque `form.cost` já é `number | undefined` no estado do formulário (o valor nunca é string, o `onChange` já converte com `Number(...)`). Corrigido para `form.cost != null` (mesmo ajuste em `minStock`). Corrigido, commitado e re-deployado.
-7. **Deploy publicado com sucesso:** build de ~1 minuto, todas as etapas completas (Initializing, Building, Deploying, Cleanup, Post-processing), 1 função implantada (a API `/api/users`). Site no ar.
+### ✅ Checkpoint — 07–08/08/2026 (evolução do produto e domínio)
 
-### ⏭️ Próximos passos (retomar daqui)
+**Código publicado na `main` (PRs mergeados):**
 
-1. Abrir o site publicado ("Open production deploy" na Netlify) e confirmar que a tela de login carrega sem erro no console.
-2. (Opcional) Renomear o projeto na Netlify para algo mais claro, ex. `opsis-crm` (Project configuration → General → Change project name) — isso muda a URL pública.
-3. Adicionar a 4ª variável de ambiente, **`NEXT_PUBLIC_SITE_URL`**, com a URL final de produção (ex: `https://opsis-crm.netlify.app`), e rodar mais um "Trigger deploy" para aplicar.
-4. No painel do Supabase → **Authentication → URL Configuration**: adicionar essa mesma URL em **"Site URL"** e em **"Redirect URLs"** — sem isso, os links de convite de usuário e redefinição de senha não funcionam em produção.
-5. Convidar os usuários reais (admin + 2 vendedores) pela tela de Usuários, já em produção, e testar os três papéis uma vez seguindo o roteiro de testes descrito em `ESTRATEGIA-SAAS.md`.
-6. Domínio próprio fica para quando fizer sentido — o endereço `*.netlify.app` já tem HTTPS automático. Se comprar um domínio depois, adicionar em Netlify (Domain management) e atualizar `NEXT_PUBLIC_SITE_URL` + Redirect URLs do Supabase.
+1. **PR #1 — Layout responsivo + sidebar retrátil** (mobile drawer, cards, modais, collapse no desktop).
+2. **PR #2 — Dashboard do vendedor + hierarquia de acessos** (`lib/access.ts`, `RequireRole`, dashboard só com total de vendas do vendedor).
+3. **PR #3 — Correção reenvio de convite** (erro “already been registered”).
+4. **PR #4 — Melhora envio de e-mail** (confirma e-mail antes do recovery; mensagem de rate limit).
 
-A partir de agora, todo `git push` na branch `main` dispara um novo deploy automático na Netlify, sem downtime — a versão nova só entra no ar depois de compilar com sucesso.
+**Infra / domínio:**
+
+5. Projeto Netlify renomeado para **`opsis-crm`** (`opsis-crm.netlify.app`).
+6. Domínio **`opsiscrm.com.br`** adquirido (DNS gerenciado na **Hostinger**, não no painel “Meus domínios” do Registro.br — nameservers `*.dns-parking.com` da Hostinger).
+7. DNS do site na Hostinger apontado para Netlify:
+   - **A** `@` → `75.2.60.5`
+   - **CNAME** `www` → `opsis-crm.netlify.app`
+8. Netlify: domínio primário `opsiscrm.com.br`, www redireciona; **DNS verification successful**; certificado Let’s Encrypt ainda em provisionamento (navegador pode mostrar “Não seguro” até emitir).
+9. Conta **Resend** criada; domínio `opsiscrm.com.br` adicionado; registros DNS do Resend criados na Hostinger (DKIM `resend._domainkey`, MX/TXT em `send`, DMARC opcional) — verificação **Pending / Checking DNS** (aguardando propagação).
+
+### 🟡 Em andamento (retomar daqui — 08/08/2026)
+
+1. **Resend:** esperar domínio `opsiscrm.com.br` ficar **Verified**.
+2. **Netlify HTTPS:** esperar certificado Let’s Encrypt ativo em `https://opsiscrm.com.br` (Retry DNS verification se demorar; não usar “Provide your own certificate”).
+3. **Supabase Auth → URL Configuration** (quando HTTPS do domínio estiver ok):
+   - Site URL: `https://opsiscrm.com.br`
+   - Redirect URLs: `https://opsiscrm.com.br/**`, `/definir-senha`, `/login` (pode manter também as do `opsis-crm.netlify.app`)
+4. **Supabase Auth → SMTP (Resend):**
+   - Host `smtp.resend.com`, port `465`, user `resend`, password = API Key Resend
+   - Sender: `noreply@opsiscrm.com.br` / nome `Ópsis CRM`
+5. **Netlify env:** `NEXT_PUBLIC_SITE_URL=https://opsiscrm.com.br` + Trigger deploy.
+6. **Teste final:** Usuários → reenviar/redefinir senha → e-mail chega → `/definir-senha` → login com cada papel (admin / gerente / vendedor).
+
+### ⏭️ Depois disso (próxima fase de produto)
+
+- Ajustar rate limits de e-mail no Supabase após SMTP.
+- PWA (manifest + service worker) — ver `ESTRATEGIA-SAAS.md`.
+- Multi-tenant (`storeId`) só após uso estável na loja.
+- Testes automatizados de RLS / papéis.
+
+### Observações operacionais
+
+- DNS do domínio edita-se na **Hostinger** (Registros DNS), não no Registro.br.
+- Não apagar os registros A/CNAME da Netlify ao adicionar os do Resend.
+- O e-mail embutido do Supabase free é limitado; produção de verdade = Resend SMTP.
+- Admin convida usuários só pela tela **Usuários**; senha sempre definida pelo próprio convidado.
