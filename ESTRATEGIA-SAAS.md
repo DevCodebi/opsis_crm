@@ -159,11 +159,14 @@ Shared-schema multi-tenant com `storeId` + RLS (detalhado na seção 4/5) é a r
 
 ## Próximos passos recomendados (ordem de prioridade)
 
-1. Publicar em produção para a sua loja usar de verdade (Vercel + domínio + Supabase Pro).
-2. Testar os três papéis (admin/gerente/vendedor) em produção seguindo o roteiro da seção 1.
-3. Ajustes de navegação mobile (o item de maior impacto no dia a dia do balcão).
-4. PWA.
-5. Multi-tenant, só quando já tiver validado o produto na sua própria loja por um tempo — não vale a pena construir isso antes de o produto estar redondo pra um usuário só.
+> **Estado em 08/08/2026:** o detalhe operacional (o que já foi feito e o que falta agora) está no final de `DOCUMENTACAO.md`. Resumo: app já em produção na Netlify; layout responsivo + sidebar retrátil + hierarquia de papéis e dashboard do vendedor publicados; domínio `opsiscrm.com.br` apontado; HTTPS e verificação Resend em andamento; falta fechar SMTP + URLs Auth + teste de convite por e-mail.
+
+1. ~~Publicar em produção~~ — feito (Netlify + Supabase; domínio `opsiscrm.com.br` em ativação).
+2. Fechar e-mail de produção: Resend Verified → SMTP no Supabase → `NEXT_PUBLIC_SITE_URL` → testar convite/reset.
+3. Testar os três papéis (admin/gerente/vendedor) em produção seguindo o roteiro da seção 1.
+4. ~~Ajustes de navegação mobile~~ — feito (hambúrguer + cards + sidebar retrátil).
+5. PWA.
+6. Multi-tenant, só quando já tiver validado o produto na sua própria loja por um tempo — não vale a pena construir isso antes de o produto estar redondo pra um usuário só.
 
 ## Riscos técnicos e como mitigar
 
