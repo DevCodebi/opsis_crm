@@ -28,6 +28,14 @@ export default function LoginPage() {
       router.refresh();
     } else if (result.error === "network") {
       setError("Não foi possível conectar. Verifique sua internet e tente novamente.");
+    } else if (result.error === "convidado") {
+      setError(
+        "Seu convite ainda está pendente. Abra o link do e-mail para definir a senha, ou peça ao administrador para reenviar o convite / ativar seu usuário."
+      );
+    } else if (result.error === "inativo") {
+      setError("Seu acesso está desativado. Fale com o administrador.");
+    } else if (result.error === "sem_perfil") {
+      setError("Usuário sem perfil no sistema. Fale com o administrador.");
     } else {
       setError("E-mail ou senha inválidos. Verifique e tente novamente.");
     }
