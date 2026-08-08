@@ -27,14 +27,9 @@ Se o RLS estiver certo, isso retorna um erro de permissão (não passa só porqu
 
 ## 2. Compatibilidade com celular e tablet
 
-**Diagnóstico:** o projeto já usa Tailwind com breakpoints responsivos nos formulários (`grid-cols-1 sm:grid-cols-2`, modais com `max-w` e padding adaptável) — os formulários funcionam razoavelmente bem no celular. O ponto fraco é a **navegação**: a `Sidebar` é fixa, sempre visível, pensada para tela larga (não tem menu hambúrguer nem colapsa em telas pequenas). As tabelas (Clientes, Produtos, Vendas) têm `overflow-x-auto`, o que evita quebrar o layout, mas numa tela de celular o usuário fica arrastando a tabela para os lados — funcional, mas não é uma boa experiência.
+**Diagnóstico (atualizado 08/08/2026):** o layout mobile e a sidebar já foram publicados (PR #1): menu hambúrguer + drawer no mobile, listagens em cards, modais adaptados e sidebar retrátil no desktop (preferência em `localStorage`). O uso no celular pelo navegador já é viável para o dia a dia da loja.
 
-**Ajustes recomendados, em ordem de impacto:**
-1. Sidebar virar um menu retrátil (hambúrguer) abaixo de `md`, com overlay — é o maior ganho de usabilidade em celular.
-2. Listagens (Clientes, Produtos, Vendas) ganharem uma versão em "cards" empilhados para telas pequenas, escondendo a tabela tradicional nesse breakpoint — padrão comum em CRMs mobile-friendly.
-3. Botões de ação (editar/excluir) com área de toque maior nas listagens, já que hoje são ícones pequenos pensados para mouse.
-
-**PWA — recomendo sim.** Para uma ótica que vai usar isso no balcão em tablet ou celular, o ganho de "instalar como app" (ícone na tela inicial, tela cheia sem barra do navegador, abre mais rápido) é real e o custo de implementar é baixo. Passos:
+**PWA — próximo passo de UX mobile.** Para o balcão em tablet/celular, o ganho de “instalar como app” (ícone na tela inicial, tela cheia, abre mais rápido) ainda faz sentido. Passos:
 1. Adicionar `crm/public/manifest.json` com nome, ícones (192px e 512px) e `"display": "standalone"`.
 2. Adicionar um service worker — mais simples usando o pacote `next-pwa`, que integra com o Next.js e cuida do cache dos arquivos estáticos.
 3. Referenciar o manifest e as meta tags de tema no `layout.tsx`.
@@ -47,40 +42,40 @@ Isso é trabalho de próxima fase, não bloqueia o uso imediato na sua loja — 
 
 ## 3. Hospedagem e publicação
 
-**Frontend → Vercel.** É quem faz o Next.js, suporte nativo, deploy a cada push no Git, deploy sem downtime (a versão nova só recebe tráfego depois de compilada e saudável — troca atômica), domínio próprio com HTTPS automático (certificado Let's Encrypt renovado sozinho).
+**Estado atual (produção):** frontend na **Netlify** (plugin Next.js, base directory `crm`), banco/auth no **Supabase**, domínio **`opsiscrm.com.br`** (DNS Hostinger → Netlify, HTTPS ativo). Merge/push na `main` dispara deploy automático. Detalhes operacionais em `DOCUMENTACAO.md` e `STATUS-ATUAL.md`.
 
-**Banco de dados → Supabase**, que você já está usando (Postgres + Auth + Storage gerenciados, com backup automático a partir do plano Pro).
+**Nota histórica:** este documento sugeria Vercel como host padrão do Next.js. A escolha efetiva foi Netlify — o fluxo (Git → build → HTTPS → domínio) é equivalente para o tamanho atual do produto. Migrar de host só faria sentido se houver necessidade específica (edge, preview workflows, etc.).
 
-**Domínio:** compre num registrador (Registro.br para `.com.br`, ou Namecheap/Cloudflare/GoDaddy para `.com`) e aponte o DNS para a Vercel seguindo as instruções que ela mesma mostra ao adicionar o domínio no projeto (geralmente um registro CNAME ou A). A Vercel emite o certificado HTTPS automaticamente assim que o DNS propaga — não precisa configurar nada manualmente.
+**Banco de dados → Supabase** (Postgres + Auth + Storage; backup automático a partir do plano Pro).
 
-**Deploy sem interromper o uso:** ao usar Vercel + Git, cada push gera um "preview deployment" isolado (URL própria) — você testa ali antes de promover para produção. Quando promove (merge na branch principal), a troca de versão é atômica: os usuários que já estão logados não são derrubados no meio de uma ação, e a próxima requisição já pega a versão nova.
+**E-mail transacional → Resend** (SMTP no Supabase Auth) para convites e reset de senha em produção.
 
-**Custos aproximados (hoje):**
+**Custos aproximados (referência):**
 
 | Item | Plano | Custo |
 |---|---|---|
-| Vercel | Hobby (grátis, mas **não permite uso comercial**) | R$ 0 |
-| Vercel | Pro (necessário para uso comercial) | US$ 20/mês por usuário da equipe |
-| Supabase | Free (só para testar — projeto pausa após 7 dias sem uso, sem backup) | R$ 0 |
-| Supabase | Pro (recomendado para produção: sem pausa, backups, mais e-mails de convite) | US$ 25/mês por projeto |
-| Domínio | `.com.br` ou `.com` | ~R$ 40–100/ano |
+| Netlify | Starter / Pro conforme tráfego | começa grátis; Pro se precisar de mais |
+| Supabase | Free (teste) / Pro (produção estável) | Free R$ 0; Pro ~US$ 25/mês |
+| Resend | Free tier para volume baixo de e-mail | começa grátis |
+| Domínio | `.com.br` | ~R$ 40–100/ano |
 
-Ou seja, para colocar isso no ar "de verdade" para sua loja, o custo recorrente gira em torno de **US$ 45/mês (Vercel Pro + Supabase Pro)** mais o domínio — dá pra começar só no Supabase Free enquanto ainda está testando internamente, sem gastar nada, e migrar para os planos pagos quando for abrir para uso real da equipe.
+Para uso real da equipe na loja: priorizar Supabase Pro (sem pausa / com backup) quando o free deixar de ser confortável; SMTP Resend já cobre o gargalo de e-mail do Auth free.
 
-**Arquitetura de produção recomendada:**
+**Arquitetura de produção atual:**
 
 ```
 [Navegador / PWA no celular]
         │  HTTPS
         ▼
-   [Vercel — Next.js: páginas + API routes]
+   [Netlify — Next.js: páginas + API routes]
         │  usa anon key (RLS protege tudo)
         │  API routes usam service_role só no servidor
         ▼
    [Supabase: Postgres + Auth + Storage]
+        │  e-mails Auth via Resend SMTP
+        ▼
+   [Resend]
 ```
-
-Simples de propósito — sem servidor próprio para administrar, sem Docker, sem Kubernetes. Para o tamanho desse produto (uma ótica, depois algumas dezenas/centenas), essa é a arquitetura de menor custo operacional e manutenção que ainda é "de verdade" profissional.
 
 ---
 
@@ -144,7 +139,7 @@ Se eu tivesse que escolher uma para começar, ficaria entre **Óptiflow** (mais 
 
 Pontos fortes: dados já saíram do localStorage para um banco de verdade (Supabase), autenticação real via Supabase Auth com convite por e-mail (sem senha em texto), RLS já habilitado com políticas por papel, API de administração de usuários protegida por validação de sessão + papel, modelo de dados limpo e com FKs corretas. Isso é uma base sólida — bem mais madura do que a maioria dos MVPs nesse estágio.
 
-Pontos que precisam evoluir para virar SaaS: hoje o sistema é single-tenant (uma loja só, implícito — não existe conceito de "loja" no banco); a navegação não é otimizada pra mobile; não há PWA; não há ambiente de produção publicado ainda (só rodando localmente); não há testes automatizados.
+Pontos que precisam evoluir para virar SaaS: hoje o sistema é single-tenant (uma loja só, implícito — não existe conceito de "loja" no banco); não há PWA; não há testes automatizados. Produção, domínio, hierarquia de papéis e layout mobile **já existem**.
 
 ## Melhor estratégia para escalar
 
@@ -152,21 +147,22 @@ Shared-schema multi-tenant com `storeId` + RLS (detalhado na seção 4/5) é a r
 
 ## Plano de evolução para produto SaaS
 
-1. **Fase 0 — usar na sua loja (agora):** publicar em produção (Vercel + Supabase Pro), sem multi-tenant ainda — é só a sua loja mesmo.
-2. **Fase 1 — polimento:** navegação mobile, PWA, testes de RLS por papel documentados.
+1. **Fase 0 — usar na sua loja (agora):** ~~publicar~~ feito (Netlify + Supabase + `opsiscrm.com.br`). Fechar SMTP Resend e uso estável da equipe.
+2. **Fase 1 — polimento:** ~~navegação mobile~~ feito; falta PWA e testes de RLS por papel documentados/automatizados.
 3. **Fase 2 — multi-tenant:** tabela `stores`, coluna `storeId`, RLS por loja, seletor de loja.
-4. **Fase 3 — comercial:** cobrança recorrente (Stripe), onboarding self-service (uma ótica nova se cadastra sozinha), página de marketing/landing, nome/marca definidos.
+4. **Fase 3 — comercial:** cobrança recorrente (Stripe), onboarding self-service, landing, marca.
 
 ## Próximos passos recomendados (ordem de prioridade)
 
-> **Estado em 08/08/2026:** o detalhe operacional (o que já foi feito e o que falta agora) está no final de `DOCUMENTACAO.md`. Resumo: app já em produção na Netlify; layout responsivo + sidebar retrátil + hierarquia de papéis e dashboard do vendedor publicados; domínio `opsiscrm.com.br` apontado; HTTPS e verificação Resend em andamento; falta fechar SMTP + URLs Auth + teste de convite por e-mail.
+> **Estado em 08/08/2026:** ver `DOCUMENTACAO.md` e `STATUS-ATUAL.md`. Resumo: produção + HTTPS + papéis + mobile + correção de ativação de convidado (PR #6) publicados; falta fechar Resend/SMTP (se pendente) e consolidar testes de convite/papéis.
 
-1. ~~Publicar em produção~~ — feito (Netlify + Supabase; domínio `opsiscrm.com.br` em ativação).
-2. Fechar e-mail de produção: Resend Verified → SMTP no Supabase → `NEXT_PUBLIC_SITE_URL` → testar convite/reset.
-3. Testar os três papéis (admin/gerente/vendedor) em produção seguindo o roteiro da seção 1.
-4. ~~Ajustes de navegação mobile~~ — feito (hambúrguer + cards + sidebar retrátil).
-5. PWA.
-6. Multi-tenant, só quando já tiver validado o produto na sua própria loja por um tempo — não vale a pena construir isso antes de o produto estar redondo pra um usuário só.
+1. ~~Publicar em produção~~ — feito (`opsis-crm.netlify.app` + `opsiscrm.com.br`).
+2. ~~Ativar convidado após definir senha~~ — feito (`/api/activate-profile` + migration).
+3. Fechar e-mail de produção: Resend Verified → SMTP no Supabase → confirmar `NEXT_PUBLIC_SITE_URL` → novo convite ponta a ponta.
+4. Testar os três papéis (admin/gerente/vendedor) em produção (seção 1).
+5. ~~Ajustes de navegação mobile~~ — feito.
+6. PWA.
+7. Multi-tenant só após uso estável na loja.
 
 ## Riscos técnicos e como mitigar
 
