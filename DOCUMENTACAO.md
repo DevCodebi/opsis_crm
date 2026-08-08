@@ -24,30 +24,37 @@ A aplicação é um app Next.js único (pasta `crm/`) com todos os dados armazen
 ```
 App Home Ótica/
 ├── package.json          # atalhos (dev/build/start) que chamam a pasta crm
+├── DOCUMENTACAO.md       # documentação técnica completa
+├── STATUS-ATUAL.md       # resumo operacional (o que falta agora)
+├── ESTRATEGIA-SAAS.md    # roadmap multi-tenant / PWA
 └── crm/                  # aplicação Next.js propriamente dita
     ├── .env.local         # chaves do Supabase (não versionar)
+    ├── netlify.toml       # build Netlify (plugin Next.js)
     ├── supabase/
-    │   └── schema.sql     # script com as tabelas e regras de segurança (RLS)
+    │   ├── schema.sql                         # tabelas + RLS (idempotente)
+    │   └── migration-activate-convidado.sql   # policy SELECT do próprio perfil
     └── src/
         ├── app/
-        │   ├── login/page.tsx           # tela de login (+ "esqueci minha senha")
-        │   ├── definir-senha/page.tsx   # 1º acesso (convite) e recuperação de senha
-        │   ├── api/users/route.ts       # API server-side p/ convidar/editar/excluir funcionários
-        │   └── (main)/                  # área logada
-        │       ├── layout.tsx           # guarda de rota (redireciona pra /login se não autenticado)
-        │       ├── page.tsx             # dashboard
+        │   ├── login/page.tsx                 # tela de login (+ "esqueci minha senha")
+        │   ├── definir-senha/page.tsx         # 1º acesso (convite) e recuperação de senha
+        │   ├── api/users/route.ts             # convidar/editar/excluir funcionários (admin)
+        │   ├── api/activate-profile/route.ts  # ativa perfil após definir senha (próprio usuário)
+        │   └── (main)/                        # área logada
+        │       ├── layout.tsx                 # guarda de rota (redireciona pra /login se não autenticado)
+        │       ├── page.tsx                   # dashboard
         │       ├── clientes/page.tsx
         │       ├── produtos/page.tsx
         │       ├── receituario/page.tsx
-        │       ├── vendas/page.tsx      # inclui impressão e exportação em PDF do comprovante
+        │       ├── vendas/page.tsx
         │       └── usuarios/page.tsx
-        ├── components/    # Sidebar, Header, Modal, PrescriptionSummary (grid do receituário)
+        ├── components/    # Sidebar, Header, Modal, RequireRole, PrescriptionSummary…
         ├── lib/
-        │   ├── store.tsx          # contexto React que fala com o Supabase (CRUD + auth)
+        │   ├── access.ts          # papéis e permissões da UI
+        │   ├── store.tsx          # contexto React (CRUD + auth)
         │   ├── supabaseClient.ts  # cliente Supabase do navegador (anon key)
         │   ├── supabaseAdmin.ts   # cliente Supabase server-only (service_role key)
-        │   └── salePrint.ts       # HTML de impressão + geração de PDF do comprovante de venda
-        └── types/index.ts # tipos TypeScript de todas as entidades
+        │   └── salePrint.ts       # impressão + PDF do comprovante de venda
+        └── types/index.ts
 ```
 
 ## Como rodar localmente
@@ -73,7 +80,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 - `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`: públicas, usadas pelo navegador para ler/gravar dados (clientes, produtos, receituários, vendas) respeitando as regras de RLS.
-- `SUPABASE_SERVICE_ROLE_KEY`: secreta, usada **somente** em `src/app/api/users/route.ts` (código de servidor) para criar/editar/excluir logins de funcionários via Supabase Auth Admin API. Nunca deve ser exposta ao navegador nem prefixada com `NEXT_PUBLIC_`.
+- `SUPABASE_SERVICE_ROLE_KEY`: secreta, usada **somente** nas rotas de API do servidor (`src/app/api/users/route.ts` e `src/app/api/activate-profile/route.ts`) — nunca no navegador nem com prefixo `NEXT_PUBLIC_`.
 
 ### Setup inicial do banco (uma vez só)
 
@@ -125,7 +132,7 @@ Ambas são `security definer` (rodam com privilégio elevado só para essa leitu
 
 | Tabela | SELECT | INSERT / UPDATE / DELETE |
 |---|---|---|
-| `profiles` | Qualquer usuário ativo (necessário pra listar nomes de vendedores/funcionários pela UI) | Nenhuma política para o navegador — tudo passa pela rota `/api/users` com `service_role`, que já valida que quem pede é admin |
+| `profiles` | (1) Qualquer usuário ativo (listar nomes na UI); (2) o próprio registro (`auth.uid() = id`), mesmo com status `convidado` — policy `profiles_select_own` | Nenhuma política de UPDATE/DELETE para o navegador — convite/edição/exclusão passam por `/api/users` (admin + `service_role`); ativação após senha passa por `/api/activate-profile` (JWT do próprio usuário + `service_role`) |
 | `clients` | Qualquer usuário ativo (vendedor precisa consultar clientes para montar uma venda) | Só `admin`/`gerente` |
 | `products` | Qualquer usuário ativo (vendedor precisa ver produto/preço na venda) | Só `admin`/`gerente` |
 | `prescriptions` | Qualquer usuário ativo (vendedor precisa ver o receituário ao vincular numa venda) | Só `admin`/`gerente` |
@@ -145,10 +152,11 @@ A FK `sales.prescriptionId` passou a ter `ON DELETE SET NULL`: excluir um receit
 
 - Login/logout usam `supabase.auth.signInWithPassword` / `supabase.auth.signOut` (Supabase Auth). Nenhuma senha é armazenada em texto em nenhuma tabela do banco — a tabela `profiles` guarda só nome, e-mail, papel e status.
 - **Cadastro de funcionário = convite por e-mail.** O admin informa nome, e-mail e papel; o sistema chama `supabaseAdmin.auth.admin.inviteUserByEmail` e o próprio funcionário define a senha ao abrir o link (tela `/definir-senha`). O admin nunca sabe/define a senha de outra pessoa — essa é a prática recomendada por SaaS e CRMs modernos (Slack, Notion, Linear, etc.), em vez de gerar uma "senha temporária".
-- Um usuário recém-convidado fica com `status = "convidado"` até definir a senha pela primeira vez (quando o próprio front marca `status = "ativo"`). Usuários com status `"inativo"` têm o acesso bloqueado sem precisar excluir a conta.
+- Um usuário recém-convidado fica com `status = "convidado"` até definir a senha. Em `/definir-senha`, após `updateUser({ password })`, o front chama **`POST /api/activate-profile`** (Bearer JWT), que com `service_role` marca `status = "ativo"`. Isso é necessário porque o client **não** tem política de UPDATE em `profiles` (RLS), e `is_active_user()` exige `ativo` — sem a API o status ficava em “Convite pendente” e o login autenticava no Auth mas o app bloqueava o acesso. Usuários `"inativo"` não são reativados por essa rota.
+- O login (`store.tsx`) rejeita sessão sem perfil, com status `convidado` ou `inativo`, com mensagens claras na tela.
 - **"Esqueci minha senha"** na tela de login chama `supabase.auth.resetPasswordForEmail` diretamente do navegador (fluxo público, não passa pela API admin) e sempre mostra a mesma mensagem de sucesso, exista ou não o e-mail cadastrado — evita que a tela seja usada para descobrir quais e-mails têm conta no sistema.
 - O admin também pode, a qualquer momento, reenviar o convite (usuários "convidado") ou disparar um link de redefinição de senha (usuários "ativo") pela tela de Usuários — sem nunca ver ou definir a senha em si.
-- Toda a lógica de convite/edição/exclusão de usuário vive em `src/app/api/users/route.ts`, que roda **somente no servidor** (usa a `service_role key`, que ignora as regras de RLS). Por isso essa rota valida em toda chamada, via o header `Authorization: Bearer <token>` enviado pelo `store.tsx`, que quem está pedindo é um admin autenticado — sem essa checagem, a rota seria um ponto de acesso público a uma chave com poder total sobre o banco.
+- Convite/edição/exclusão vivem em `src/app/api/users/route.ts` (valida admin via Bearer token). Ativação do próprio perfil vive em `src/app/api/activate-profile/route.ts` (valida o JWT do usuário). Ambas usam `service_role` só no servidor.
 
 ## Exportação de relatórios
 
@@ -192,10 +200,17 @@ O campo e-mail do cliente é opcional — a ótica pode cadastrar um cliente só
 
 ## Convites e e-mail de acesso
 
-Fluxo: admin em **Usuários** → Convidar → Supabase Auth envia e-mail → usuário define senha em `/definir-senha`.
+Fluxo completo:
 
-- API: `crm/src/app/api/users/route.ts` (`inviteUserByEmail` no primeiro convite).
-- **Reenvio / redefinição:** confirma o e-mail do usuário no Auth (`email_confirm: true`) e dispara `resetPasswordForEmail` para `/definir-senha` — necessário porque convidados costumam ficar sem e-mail confirmado e o Supabase não envia recovery nesse estado.
+1. Admin em **Usuários** → Convidar → `inviteUserByEmail` → perfil com `status = convidado`.
+2. Usuário abre o link do e-mail → `/definir-senha` → define senha.
+3. Front chama `/api/activate-profile` → perfil vira `status = ativo`.
+4. Login com e-mail + senha → acesso conforme o papel.
+
+- API de administração: `crm/src/app/api/users/route.ts`.
+- API de ativação: `crm/src/app/api/activate-profile/route.ts`.
+- **Reenvio / redefinição:** confirma o e-mail no Auth (`email_confirm: true`) e dispara `resetPasswordForEmail` para `/definir-senha` — necessário porque convidados costumam ficar sem e-mail confirmado e o Supabase não envia recovery nesse estado.
+- Migration pontual (já aplicada em produção): `crm/supabase/migration-activate-convidado.sql` (`profiles_select_own`).
 - E-mail padrão do Supabase (plano free) é limitado; para produção estável usa-se **SMTP próprio (Resend)** — ver checkpoint abaixo.
 
 ## Publicação (deploy) — GitHub + Netlify + Supabase
@@ -206,10 +221,10 @@ Repositório: `https://github.com/DevCodebi/opsis_crm`.
 | URL | Uso |
 |---|---|
 | `https://opsis-crm.netlify.app` | Site Netlify (sempre HTTPS) |
-| `https://opsiscrm.com.br` | Domínio próprio (Hostinger DNS → Netlify); HTTPS em provisionamento |
+| `https://opsiscrm.com.br` | Domínio próprio (Hostinger DNS → Netlify); HTTPS Let’s Encrypt **ativo** |
 | `glittering-cat-55cd79.netlify.app` | **Obsoleto** (404) — não usar |
 
-Build Netlify: Base directory `crm`, Runtime Next.js, `npm run build`. Variáveis: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Todo push na `main` redeploya automaticamente.
+Build Netlify: Base directory `crm`, Runtime Next.js, `npm run build` (`crm/netlify.toml`). Variáveis: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL=https://opsiscrm.com.br`. Todo push/merge na `main` **redeploya automaticamente**.
 
 ### ✅ Checkpoint histórico — 06/07/2026 (primeira publicação)
 
@@ -223,29 +238,30 @@ Supabase + schema, GitHub, Netlify, variáveis de ambiente, primeiro deploy ok, 
 2. **PR #2 — Dashboard do vendedor + hierarquia de acessos** (`lib/access.ts`, `RequireRole`, dashboard só com total de vendas do vendedor).
 3. **PR #3 — Correção reenvio de convite** (erro “already been registered”).
 4. **PR #4 — Melhora envio de e-mail** (confirma e-mail antes do recovery; mensagem de rate limit).
+5. **PR #6 — Ativar convidado ao definir senha** (`/api/activate-profile` + policy `profiles_select_own`; login com mensagens para `convidado`/`inativo`).
 
 **Infra / domínio:**
 
-5. Projeto Netlify renomeado para **`opsis-crm`** (`opsis-crm.netlify.app`).
-6. Domínio **`opsiscrm.com.br`** adquirido (DNS gerenciado na **Hostinger**, não no painel “Meus domínios” do Registro.br — nameservers `*.dns-parking.com` da Hostinger).
-7. DNS do site na Hostinger apontado para Netlify:
+6. Projeto Netlify renomeado para **`opsis-crm`** (`opsis-crm.netlify.app`).
+7. Domínio **`opsiscrm.com.br`** (DNS na **Hostinger**; nameservers `*.dns-parking.com`).
+8. DNS do site na Hostinger → Netlify:
    - **A** `@` → `75.2.60.5`
    - **CNAME** `www` → `opsis-crm.netlify.app`
-8. Netlify: domínio primário `opsiscrm.com.br`, www redireciona; **DNS verification successful**; certificado Let’s Encrypt ainda em provisionamento (navegador pode mostrar “Não seguro” até emitir).
-9. Conta **Resend** criada; domínio `opsiscrm.com.br` adicionado; registros DNS do Resend criados na Hostinger (DKIM `resend._domainkey`, MX/TXT em `send`, DMARC opcional) — verificação **Pending / Checking DNS** (aguardando propagação).
+9. Netlify: domínio primário `opsiscrm.com.br`, www redireciona; certificado Let’s Encrypt **ativo**.
+10. Conta **Resend** + registros DNS (DKIM / MX-TXT `send` / DMARC) na Hostinger.
+11. Migration `crm/supabase/migration-activate-convidado.sql` aplicada no Supabase de produção.
 
 ### 🟡 Em andamento (retomar daqui — 08/08/2026)
 
-1. **Resend:** esperar domínio `opsiscrm.com.br` ficar **Verified**.
-2. **Netlify HTTPS:** esperar certificado Let’s Encrypt ativo em `https://opsiscrm.com.br` (Retry DNS verification se demorar; não usar “Provide your own certificate”).
-3. **Supabase Auth → URL Configuration** (quando HTTPS do domínio estiver ok):
+1. **Resend:** confirmar domínio `opsiscrm.com.br` **Verified** (se ainda não estiver).
+2. **Supabase Auth → URL Configuration:**
    - Site URL: `https://opsiscrm.com.br`
    - Redirect URLs: `https://opsiscrm.com.br/**`, `/definir-senha`, `/login` (pode manter também as do `opsis-crm.netlify.app`)
-4. **Supabase Auth → SMTP (Resend):**
+3. **Supabase Auth → SMTP (Resend)** — se ainda não configurado:
    - Host `smtp.resend.com`, port `465`, user `resend`, password = API Key Resend
    - Sender: `noreply@opsiscrm.com.br` / nome `Ópsis CRM`
-5. **Netlify env:** `NEXT_PUBLIC_SITE_URL=https://opsiscrm.com.br` + Trigger deploy.
-6. **Teste final:** Usuários → reenviar/redefinir senha → e-mail chega → `/definir-senha` → login com cada papel (admin / gerente / vendedor).
+4. **Netlify env:** `NEXT_PUBLIC_SITE_URL=https://opsiscrm.com.br` (já definido → só confirmar após mudanças).
+5. **Teste final de e-mail:** novo convite → e-mail chega → `/definir-senha` → status **Ativo** → login (admin / gerente / vendedor).
 
 ### ⏭️ Depois disso (próxima fase de produto)
 
@@ -260,3 +276,5 @@ Supabase + schema, GitHub, Netlify, variáveis de ambiente, primeiro deploy ok, 
 - Não apagar os registros A/CNAME da Netlify ao adicionar os do Resend.
 - O e-mail embutido do Supabase free é limitado; produção de verdade = Resend SMTP.
 - Admin convida usuários só pela tela **Usuários**; senha sempre definida pelo próprio convidado.
+- Deploy: merge/push na `main` → Netlify publica sozinho (não precisa Trigger manual, salvo mudança só de env).
+- Se um usuário antigo ficar preso em “Convite pendente” após já ter senha: admin edita status para **Ativo**, ou SQL `update public.profiles set status = 'ativo' where email = '...'`.

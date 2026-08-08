@@ -1,14 +1,15 @@
-# Home Ótica - CRM
+# Ópsis CRM / Home Ótica — CRM
 
-Sistema de gestão e vendas para ótica, com cadastro de clientes, produtos, **receituário médico** (graus: OD/OS, SPH, CYL, AXIS, ADD, PD) e vendas, além de dashboard com indicadores.
+Sistema de gestão e vendas para ótica: clientes, produtos, receituário médico, vendas, usuários por convite e dashboard. Marca do produto: **Ópsis CRM**; loja: **Home Ótica**.
+
+Documentação completa na raiz do repositório: `DOCUMENTACAO.md`, `STATUS-ATUAL.md`, `ESTRATEGIA-SAAS.md`.
 
 ## Tecnologias
 
 - **Next.js 14** (App Router), **React**, **TypeScript**
-- **Tailwind CSS** (tema com cores do logo Home Ótica)
-- **Recharts** (gráficos do dashboard)
-- **date-fns** (datas em pt-BR)
-- **lucide-react** (ícones)
+- **Supabase** (Postgres + Auth + RLS)
+- **Tailwind CSS**
+- **Recharts**, **date-fns**, **lucide-react**, **xlsx**, **jsPDF**
 
 ## Como rodar
 
@@ -20,26 +21,25 @@ npm run dev
 
 Acesse [http://localhost:3000](http://localhost:3000).
 
+Configure `crm/.env.local` com `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY`. Schema: `supabase/schema.sql`.
+
 ## Funcionalidades
 
-- **Dashboard**: receita total, número de vendas, ticket médio, total de clientes; gráfico de receita por mês; gráfico de vendas por status (pendente, pago, entregue, cancelado).
-- **Clientes**: listagem, busca, cadastro e edição (nome, e-mail, telefone, CPF, endereço).
-- **Produtos**: cadastro de armações, lentes e acessórios (nome, tipo, SKU, preço, estoque, descrição).
-- **Receituário médico**: cadastro por cliente com:
-  - **OD** (olho direito) e **OS** (olho esquerdo): SPH (esférico), CYL (cilíndrico), AXIS (eixo 1–180°), ADD (adição).
-  - Distância pupilar (PD) em mm.
-  - Nome e CRM do médico oftalmologista, data da receita e observações.
-- **Vendas**: registro de venda vinculado a cliente, opcionalmente a um receituário do cliente, com itens (produto, quantidade, preço), desconto, status e observações.
+- **Dashboard:** indicadores por papel (vendedor vê só o total das próprias vendas).
+- **Clientes / Produtos / Receituário:** admin e gerente.
+- **Vendas:** todos os ativos; vendedor só as próprias.
+- **Usuários:** só admin — convite por e-mail, reenvio, ativação automática após definir senha (`/api/activate-profile`).
+- **Comprovante:** impressão e PDF.
 
-Os dados são salvos no **localStorage** do navegador (sem backend). Para persistência em servidor, você pode integrar Supabase ou outra API.
+## Produção
 
-## Logo
-
-Para exibir o logo da Home Ótica na sidebar, coloque a imagem em `crm/public/logo.png`. O layout já usa as cores do logo (fundo escuro `#1A1D25`, azul `#344B6F`, cinza `#5D708B`, texto claro `#EAEAEA`).
+- Host: **Netlify** (base directory `crm`, ver `netlify.toml`)
+- Domínio: `https://opsiscrm.com.br` (também `https://opsis-crm.netlify.app`)
+- Deploy: automático a cada push/merge na `main`
 
 ## Scripts
 
-- `npm run dev` — servidor de desenvolvimento
+- `npm run dev` — desenvolvimento
 - `npm run build` — build de produção
-- `npm run start` — rodar build de produção
+- `npm run start` — rodar build
 - `npm run lint` — ESLint
