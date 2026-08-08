@@ -63,20 +63,33 @@ export default function DefinirSenhaPage() {
     }
 
     setLoading(true);
-    const { data: userData, error: updateError } = await supabase.auth.updateUser({ password });
+    const { error: updateError } = await supabase.auth.updateUser({ password });
     if (updateError) {
       setLoading(false);
       setError("Não foi possível definir a senha: " + updateError.message);
       return;
     }
 
-    // Ativa o perfil (cobre o caso de primeiro acesso vindo de convite;
-    // para quem já estava ativo e só redefiniu a senha, não tem efeito).
-    if (userData.user) {
-      await supabase
-        .from("profiles")
-        .update({ status: "ativo", updatedAt: new Date().toISOString() })
-        .eq("id", userData.user.id);
+    // Ativa o perfil via API (service_role). Atualizar profiles direto do
+    // navegador falha por RLS — convidado não é "ativo", então a política
+    // antiga impedia o status de mudar e o login ficava bloqueado.
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      const res = await fetch("/api/activate-profile", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        setLoading(false);
+        setError(
+          json.error ||
+            "Senha salva, mas não foi possível ativar o acesso. Peça ao administrador para marcar seu usuário como Ativo."
+        );
+        return;
+      }
     }
 
     setLoading(false);

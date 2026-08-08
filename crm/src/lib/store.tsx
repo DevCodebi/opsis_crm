@@ -113,7 +113,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       .eq("id", userId)
       .maybeSingle();
     if (!error && data) {
-      setCurrentUser(data as User);
+      // Convite pendente ou desativado: Auth pode autenticar, mas o app não libera.
+      if (data.status === "ativo") {
+        setCurrentUser(data as User);
+      } else {
+        setCurrentUser(null);
+      }
     } else {
       setCurrentUser(null);
     }
@@ -396,6 +401,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           console.error("Falha no login:", error?.message);
           return { ok: false, error: error?.message };
         }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        if (!profile) {
+          await supabase.auth.signOut();
+          return { ok: false, error: "sem_perfil" };
+        }
+        if (profile.status === "convidado") {
+          await supabase.auth.signOut();
+          return { ok: false, error: "convidado" };
+        }
+        if (profile.status === "inativo") {
+          await supabase.auth.signOut();
+          return { ok: false, error: "inativo" };
+        }
+
         await loadCurrentUserProfile(data.user.id);
         await refreshAll();
         return { ok: true };

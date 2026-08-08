@@ -183,11 +183,14 @@ drop policy if exists "sales_all_authenticated" on public.sales;
 -- tela de Usuários, etc.).
 create policy "profiles_select_active" on public.profiles
   for select using (public.is_active_user());
+-- Cada um pode ler o próprio perfil (inclui status "convidado"), necessário
+-- para o login informar "convite pendente" e para a ativação pós-senha.
+create policy "profiles_select_own" on public.profiles
+  for select using (auth.uid() = id);
 -- Sem política de INSERT/UPDATE/DELETE para o papel "authenticated": toda
--- criação/edição/exclusão de usuário passa pela rota /api/users, que usa a
--- service_role key (ignora RLS) e já valida que quem pede é admin. Deixar
--- essas operações sem política aqui é reforço: mesmo com o token de um
--- usuário comum em mãos, não dá para alterar perfis direto no banco.
+-- criação/edição/exclusão de usuário passa pela rota /api/users (admin) ou
+-- /api/activate-profile (próprio usuário ativando após definir senha), ambas
+-- com service_role. Deixar UPDATE sem política no client é reforço de segurança.
 
 -- ---------- CLIENTS ----------
 -- Leitura: qualquer usuário ativo (o vendedor precisa consultar clientes
@@ -311,3 +314,9 @@ end $$;
 alter table public.sales
   add constraint "sales_prescriptionId_fkey"
   foreign key ("prescriptionId") references public.prescriptions(id) on delete set null;
+
+-- Convidado precisa ler o próprio perfil (login / mensagens de status).
+-- Ativação do status "ativo" após definir senha é feita em /api/activate-profile.
+drop policy if exists "profiles_select_own" on public.profiles;
+create policy "profiles_select_own" on public.profiles
+  for select using (auth.uid() = id);
