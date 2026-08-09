@@ -1,6 +1,6 @@
 # Ópsis CRM — Status atual
 
-**Atualizado em:** 08/08/2026  
+**Atualizado em:** 09/08/2026  
 **Documento completo:** ver `DOCUMENTACAO.md` (seção Publicação / checkpoints).
 
 ## Onde estamos
@@ -13,6 +13,7 @@
 | Hierarquia admin/gerente/vendedor + dashboard do vendedor | ✅ Publicado (PR #2) |
 | Correções de convite/e-mail no código | ✅ Publicados (PR #3 e #4) |
 | Ativar convidado após definir senha | ✅ Publicado (PR #6) + migration `migration-activate-convidado.sql` aplicada |
+| Vendedor cadastra clientes/receituário; pagamento combinado; desconto com senha | ✅ Publicado (PR #8) + migration `migration-vendedor-cadastro-pagamento.sql` aplicada |
 | Deploy automático na `main` | ✅ Netlify redeploya a cada merge/push |
 | Resend + SMTP no Supabase | 🟡 Confirmar Verified + SMTP se ainda não estiver |
 | PWA / multi-tenant | ⏳ Fase seguinte |
@@ -22,7 +23,10 @@
 1. Confirmar Resend domínio **Verified** + SMTP no Supabase (se ainda faltar)
 2. Confirmar Auth URL Configuration com `https://opsiscrm.com.br`
 3. Testar um **novo** convite ponta a ponta (convite → e-mail → definir senha → status Ativo → login)
-4. Validar os 3 papéis (admin / gerente / vendedor)
+4. Validar os 3 papéis em produção, com foco no vendedor:
+   - cadastrar/editar cliente e receituário (sem excluir)
+   - venda com pagamento combinado (ex.: dinheiro + cartão)
+   - desconto até 5% com senha do vendedor; acima disso com gerente/admin
 
 ## Contas envolvidas
 

@@ -14,9 +14,14 @@ Documento de arquitetura e produto: diagnóstico do estado atual, plano para vir
 
 **Validar se o RLS está funcionando de verdade** (não só confiando na UI escondida): abra o DevTools (F12) → Console, logado como o papel mais restrito (vendedor), e tente uma ação que a política deveria recusar direto pela API, contornando a interface — por exemplo:
 ```js
+// Vendedor pode cadastrar/editar clientes e receituário, mas NÃO pode excluir
 await window.supabase.from('clients').delete().eq('id', 'algum-id')
+// Vendedor também não deve conseguir escrever em produtos
+await window.supabase.from('products').insert({ name: 'teste', price: 1, stock: 0 })
 ```
 Se o RLS estiver certo, isso retorna um erro de permissão (não passa só porque o botão está escondido). Esse é o teste que realmente prova que a segurança está no banco, não só no front-end.
+
+**Checklist rápido do vendedor (após PR #8):** criar cliente ✅ · editar receituário ✅ · excluir cliente ❌ · criar produto ❌ · venda com dinheiro+cartão ✅ · desconto ≤5% com própria senha ✅ · desconto >5% só com gerente/admin ✅.
 
 **Ferramentas/boas práticas:**
 - Supabase Studio tem um inspetor de políticas em **Authentication → Policies**, onde dá pra ver e testar cada política por tabela.
@@ -154,15 +159,16 @@ Shared-schema multi-tenant com `storeId` + RLS (detalhado na seção 4/5) é a r
 
 ## Próximos passos recomendados (ordem de prioridade)
 
-> **Estado em 08/08/2026:** ver `DOCUMENTACAO.md` e `STATUS-ATUAL.md`. Resumo: produção + HTTPS + papéis + mobile + correção de ativação de convidado (PR #6) publicados; falta fechar Resend/SMTP (se pendente) e consolidar testes de convite/papéis.
+> **Estado em 09/08/2026:** ver `DOCUMENTACAO.md` e `STATUS-ATUAL.md`. Resumo: produção + HTTPS + papéis + mobile + ativação de convidado (PR #6) + vendedor no balcão com pagamento combinado e desconto com senha (PR #8) publicados; falta fechar Resend/SMTP (se pendente) e consolidar testes de convite/papéis.
 
 1. ~~Publicar em produção~~ — feito (`opsis-crm.netlify.app` + `opsiscrm.com.br`).
 2. ~~Ativar convidado após definir senha~~ — feito (`/api/activate-profile` + migration).
-3. Fechar e-mail de produção: Resend Verified → SMTP no Supabase → confirmar `NEXT_PUBLIC_SITE_URL` → novo convite ponta a ponta.
-4. Testar os três papéis (admin/gerente/vendedor) em produção (seção 1).
-5. ~~Ajustes de navegação mobile~~ — feito.
-6. PWA.
-7. Multi-tenant só após uso estável na loja.
+3. ~~Vendedor cadastra clientes/receituário + pagamento combinado + desconto com senha~~ — feito (PR #8 + migration).
+4. Fechar e-mail de produção: Resend Verified → SMTP no Supabase → confirmar `NEXT_PUBLIC_SITE_URL` → novo convite ponta a ponta.
+5. Testar os três papéis (admin/gerente/vendedor) em produção (seção 1), incluindo o checklist do vendedor acima.
+6. ~~Ajustes de navegação mobile~~ — feito.
+7. PWA.
+8. Multi-tenant só após uso estável na loja.
 
 ## Riscos técnicos e como mitigar
 
