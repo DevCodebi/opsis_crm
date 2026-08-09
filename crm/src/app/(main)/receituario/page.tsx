@@ -6,7 +6,7 @@ import type { Prescription, EyePrescription } from "@/types";
 import { Plus, Pencil, Trash2, Search, FileText, Eye } from "lucide-react";
 import { ModalLarge } from "@/components/Modal";
 import { RequireRole } from "@/components/RequireRole";
-import { ROLES_GESTAO } from "@/lib/access";
+import { ROLES_CADASTRO, isGerenteOrAdmin } from "@/lib/access";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -77,19 +77,20 @@ function EyeFields({
 
 export default function ReceituarioPage() {
   return (
-    <RequireRole allow={ROLES_GESTAO}>
+    <RequireRole allow={ROLES_CADASTRO}>
       <ReceituarioPageContent />
     </RequireRole>
   );
 }
 
 function ReceituarioPageContent() {
-  const { clients, prescriptions, addPrescription, updatePrescription, deletePrescription } = useStore();
+  const { clients, prescriptions, addPrescription, updatePrescription, deletePrescription, currentUser } = useStore();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Prescription | null>(null);
   const [viewing, setViewing] = useState<Prescription | null>(null);
   const [form, setForm] = useState<Partial<Prescription>>({});
   const [showForm, setShowForm] = useState(false);
+  const canDelete = isGerenteOrAdmin(currentUser?.role);
 
   const filtered = prescriptions.filter((p) => {
     const client = clients.find((c) => c.id === p.clientId);
@@ -220,14 +221,16 @@ function ReceituarioPageContent() {
                 >
                   <Pencil className="w-5 h-5" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(p.id)}
-                  className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
-                  aria-label="Excluir receita"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p.id)}
+                    className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
+                    aria-label="Excluir receita"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -290,14 +293,16 @@ function ReceituarioPageContent() {
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(p.id)}
-                      title="Excluir"
-                      className="p-2 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors duration-200"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(p.id)}
+                        title="Excluir"
+                        className="p-2 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

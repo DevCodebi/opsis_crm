@@ -13,14 +13,20 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   vendedor: "Vendedor",
 };
 
-/** Quem pode ver/editar cadastros (clientes, produtos, receituário) */
+/** Quem pode ver/editar cadastros de gestão (produtos) */
 export const ROLES_GESTAO: UserRole[] = ["admin", "gerente"];
+
+/** Quem pode cadastrar/editar clientes e receituário (inclui vendedor) */
+export const ROLES_CADASTRO: UserRole[] = ["admin", "gerente", "vendedor"];
 
 /** Quem pode gerenciar usuários do sistema */
 export const ROLES_USUARIOS: UserRole[] = ["admin"];
 
 /** Quem acessa vendas e dashboard */
 export const ROLES_VENDAS: UserRole[] = ["admin", "gerente", "vendedor"];
+
+/** Limite de desconto (%) que o vendedor pode liberar com a própria senha */
+export const DESCONTO_MAX_VENDEDOR_PCT = 5;
 
 export function hasRole(userRole: UserRole | undefined | null, allowed: UserRole[]): boolean {
   if (!userRole) return false;

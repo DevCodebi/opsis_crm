@@ -87,6 +87,12 @@ export type PaymentMethod =
 // Forma de pagamento ao quitar boleto/parcela (sem boleto/parcelado)
 export type PaymentMethodQuitar = "dinheiro" | "pix" | "cartao_debito" | "cartao_credito";
 
+/** Parcela de um pagamento combinado (ex.: dinheiro + cartão) */
+export interface PaymentSplit {
+  method: PaymentMethod;
+  amount: number;
+}
+
 // Parcela de boleto (até 6x)
 export interface BoletoParcela {
   id: string;
@@ -104,8 +110,11 @@ export interface Sale {
   clientName: string;
   sellerId?: string;
   sellerName?: string;
+  /** Forma principal (compatível com vendas antigas); espelha o 1º split quando houver combinação */
   paymentMethod?: PaymentMethod;
-  boletoParcelas?: BoletoParcela[]; // preenchido quando paymentMethod === "boleto"
+  /** Pagamento combinado (ex.: dinheiro + cartão). Se vazio, usa paymentMethod. */
+  paymentSplits?: PaymentSplit[];
+  boletoParcelas?: BoletoParcela[]; // preenchido quando há boleto no pagamento
   prescriptionId?: string;
   items: SaleItem[];
   subtotal: number;

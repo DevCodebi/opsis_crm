@@ -1,6 +1,7 @@
 import type { EyePrescription, Prescription, Sale } from "@/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatPaymentSummary } from "@/lib/payments";
 
 // Lib compartilhada para gerar o "comprovante de venda" (impressão em
 // tela e exportação em PDF), garantindo que os dois botões mostrem
@@ -101,6 +102,10 @@ export function buildSaleReceiptHtml(sale: Sale, prescription?: Prescription): s
           <td style="padding:4px 0;">${fmtDate(sale.expectedDeliveryDate)}</td>
         </tr>
         ${sale.sellerName ? `<tr><td style="padding:4px 8px 4px 0; font-weight:bold;">Vendedor</td><td style="padding:4px 0;">${sale.sellerName}</td></tr>` : ""}
+        <tr>
+          <td style="padding:4px 8px 4px 0; font-weight:bold;">Pagamento</td>
+          <td style="padding:4px 0;">${formatPaymentSummary(sale)}</td>
+        </tr>
       </table>
 
       <h2 style="margin-top:24px;">Itens</h2>
@@ -199,6 +204,7 @@ export async function exportSaleReceiptToPdf(sale: Sale, prescription?: Prescrip
   addLine("Data da venda:", fmtDateTime(sale.createdAt));
   addLine("Data prevista de entrega:", fmtDate(sale.expectedDeliveryDate));
   if (sale.sellerName) addLine("Vendedor:", sale.sellerName);
+  addLine("Pagamento:", formatPaymentSummary(sale));
 
   addSectionTitle("Itens");
   doc.setFont("helvetica", "bold");

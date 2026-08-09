@@ -2,14 +2,21 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useStore } from "@/lib/store";
-import type { Sale, SaleItem, PaymentMethod, BoletoParcela, PaymentMethodQuitar } from "@/types";
-import { Plus, Pencil, Trash2, Search, ShoppingCart, Eye, Printer, CheckCircle, Truck, Download } from "lucide-react";
-import { ModalLarge } from "@/components/Modal";
+import type { Sale, SaleItem, PaymentMethod, PaymentSplit, BoletoParcela, PaymentMethodQuitar } from "@/types";
+import { Plus, Pencil, Trash2, Search, ShoppingCart, Eye, Printer, CheckCircle, Truck, Download, Lock, Unlock } from "lucide-react";
+import { Modal, ModalLarge } from "@/components/Modal";
 import { format, addMonths, parseISO, differenceInDays, isBefore, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { printSaleReceipt, exportSaleReceiptToPdf } from "@/lib/salePrint";
 import { PrescriptionSummary } from "@/components/PrescriptionSummary";
-import { isGerenteOrAdmin, isVendedor } from "@/lib/access";
+import { DESCONTO_MAX_VENDEDOR_PCT, isGerenteOrAdmin, isVendedor } from "@/lib/access";
+import {
+  PAYMENT_LABELS,
+  formatPaymentSummary,
+  paymentSplitsTotal,
+  roundMoney,
+} from "@/lib/payments";
+import { supabase } from "@/lib/supabaseClient";
 
 const STATUS_LABELS: Record<Sale["status"], string> = {
   pendente: "Pendente",
@@ -18,15 +25,8 @@ const STATUS_LABELS: Record<Sale["status"], string> = {
   cancelado: "Cancelado",
 };
 
-const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-  dinheiro: "Dinheiro",
-  pix: "PIX",
-  cartao_debito: "Cartão de débito",
-  cartao_credito: "Cartão de crédito",
-  parcelado: "Parcelado",
-  boleto: "Boleto",
-  outro: "Outro",
-};
+type FormPaymentLine = { method: PaymentMethod; amount: string };
+type DiscountAuthLevel = "seller" | "manager";
 
 const PAYMENT_QUITAR_LABELS: Record<PaymentMethodQuitar, string> = {
   dinheiro: "Dinheiro",
@@ -64,11 +64,11 @@ export default function VendasPage() {
     clientId: string;
     sellerId: string;
     prescriptionId: string;
-    paymentMethod: PaymentMethod;
+    paymentSplits: FormPaymentLine[];
     boletoNumParcelas: number;
     boletoPrimeiroVencimento: string;
     items: { productId: string; quantity: number; unitPrice: number }[];
-    discount: number;
+    discount: string;
     status: Sale["status"];
     expectedDeliveryDate: string;
     notes: string;
@@ -76,11 +76,11 @@ export default function VendasPage() {
     clientId: "",
     sellerId: "",
     prescriptionId: "",
-    paymentMethod: "dinheiro",
+    paymentSplits: [{ method: "dinheiro", amount: "" }],
     boletoNumParcelas: 1,
     boletoPrimeiroVencimento: "",
     items: [],
-    discount: 0,
+    discount: "",
     status: "pendente",
     expectedDeliveryDate: "",
     notes: "",
@@ -92,6 +92,15 @@ export default function VendasPage() {
   const boletoPrintRef = useRef<HTMLDivElement>(null);
   const salePrintRef = useRef<HTMLDivElement>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
+
+  // Desconto: vendedor precisa de senha; acima de 5% exige gerente/admin
+  const [discountAuthLevel, setDiscountAuthLevel] = useState<DiscountAuthLevel | null>(null);
+  const [authModal, setAuthModal] = useState<"seller" | "manager" | null>(null);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [pendingDiscount, setPendingDiscount] = useState<string | null>(null);
 
   const vendedoresOptions = useMemo(
     () => users.filter((u) => u.status === "ativo" && (u.role === "vendedor" || u.role === "admin" || u.role === "gerente")),
@@ -141,9 +150,42 @@ export default function VendasPage() {
       (acc, it) => acc + it.quantity * it.unitPrice,
       0
     );
-    const discount = Number(form.discount) || 0;
-    return { subtotal, total: Math.max(0, subtotal - discount) };
+    const discountRaw = form.discount.trim() === "" ? 0 : Number(form.discount);
+    const discount = Number.isFinite(discountRaw) ? Math.max(0, discountRaw) : 0;
+    return { subtotal, discount, total: Math.max(0, roundMoney(subtotal - discount)) };
   }, [form.items, form.discount]);
+
+  const maxSellerDiscount = useMemo(
+    () => roundMoney((totals.subtotal * DESCONTO_MAX_VENDEDOR_PCT) / 100),
+    [totals.subtotal]
+  );
+
+  const discountUnlocked = !vendedorLocked || discountAuthLevel !== null;
+  const hasBoletoPayment = form.paymentSplits.some((s) => s.method === "boleto");
+
+  const resolvedPaymentSplits = useMemo((): PaymentSplit[] => {
+    const lines = form.paymentSplits;
+    if (lines.length === 1) {
+      const amount =
+        lines[0].amount.trim() === "" ? totals.total : roundMoney(Number(lines[0].amount) || 0);
+      return [{ method: lines[0].method, amount }];
+    }
+    return lines.map((l) => ({
+      method: l.method,
+      amount: roundMoney(Number(l.amount) || 0),
+    }));
+  }, [form.paymentSplits, totals.total]);
+
+  const paymentSum = useMemo(() => paymentSplitsTotal(resolvedPaymentSplits), [resolvedPaymentSplits]);
+
+  const resetDiscountAuth = () => {
+    setDiscountAuthLevel(null);
+    setAuthModal(null);
+    setAuthEmail("");
+    setAuthPassword("");
+    setAuthError("");
+    setPendingDiscount(null);
+  };
 
   const openNew = () => {
     const hoje = format(new Date(), "yyyy-MM-dd");
@@ -151,15 +193,16 @@ export default function VendasPage() {
       clientId: "",
       sellerId: currentUser?.id ?? "",
       prescriptionId: "",
-      paymentMethod: "dinheiro",
+      paymentSplits: [{ method: "dinheiro", amount: "" }],
       boletoNumParcelas: 1,
       boletoPrimeiroVencimento: hoje,
       items: [],
-      discount: 0,
+      discount: "",
       status: "pendente",
       expectedDeliveryDate: "",
       notes: "",
     });
+    resetDiscountAuth();
     setEditing(null);
     setShowForm(true);
   };
@@ -170,11 +213,18 @@ export default function VendasPage() {
       alert("Você só pode editar as suas próprias vendas.");
       return;
     }
+    const splits =
+      s.paymentSplits && s.paymentSplits.length > 0
+        ? s.paymentSplits
+        : [{ method: s.paymentMethod ?? "dinheiro", amount: s.total }];
     setForm({
       clientId: s.clientId,
       sellerId: vendedorLocked ? (currentUser?.id ?? "") : (s.sellerId ?? currentUser?.id ?? ""),
       prescriptionId: s.prescriptionId ?? "",
-      paymentMethod: s.paymentMethod ?? "dinheiro",
+      paymentSplits: splits.map((sp) => ({
+        method: sp.method,
+        amount: String(sp.amount),
+      })),
       boletoNumParcelas: s.boletoParcelas?.length ?? 1,
       boletoPrimeiroVencimento: s.boletoParcelas?.[0]?.dueDate?.slice(0, 10) ?? format(new Date(), "yyyy-MM-dd"),
       items: s.items.map((it) => ({
@@ -182,13 +232,133 @@ export default function VendasPage() {
         quantity: it.quantity,
         unitPrice: it.unitPrice,
       })),
-      discount: s.discount,
+      discount: s.discount > 0 ? String(s.discount) : "",
       status: s.status,
       expectedDeliveryDate: s.expectedDeliveryDate ?? "",
       notes: s.notes ?? "",
     });
+    // Ao editar, vendedor precisa reautorizar para alterar o desconto
+    resetDiscountAuth();
     setEditing(s);
     setShowForm(true);
+  };
+
+  const requestDiscountUnlock = () => {
+    if (!vendedorLocked) return;
+    setAuthError("");
+    setAuthPassword("");
+    setAuthEmail("");
+    setAuthModal("seller");
+  };
+
+  const applyDiscountValue = (raw: string) => {
+    if (raw.trim() === "") {
+      setForm((f) => ({ ...f, discount: "" }));
+      return;
+    }
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) return;
+
+    if (vendedorLocked) {
+      if (!discountAuthLevel) {
+        setPendingDiscount(raw);
+        requestDiscountUnlock();
+        return;
+      }
+      if (value > maxSellerDiscount + 0.001 && discountAuthLevel !== "manager") {
+        setPendingDiscount(raw);
+        setAuthError("");
+        setAuthPassword("");
+        setAuthEmail("");
+        setAuthModal("manager");
+        return;
+      }
+    }
+    setForm((f) => ({ ...f, discount: raw }));
+  };
+
+  const submitDiscountAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authModal) return;
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setAuthError("Sessão expirada. Faça login novamente.");
+        return;
+      }
+
+      const body =
+        authModal === "seller"
+          ? { mode: "self" as const, password: authPassword }
+          : { mode: "manager" as const, email: authEmail, password: authPassword };
+
+      const res = await fetch("/api/authorize-discount", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAuthError(data.error || "Não foi possível autorizar.");
+        return;
+      }
+
+      const level: DiscountAuthLevel = data.level === "manager" ? "manager" : "seller";
+      setDiscountAuthLevel(level);
+      setAuthModal(null);
+      setAuthPassword("");
+      setAuthEmail("");
+
+      if (pendingDiscount != null) {
+        const pending = pendingDiscount;
+        setPendingDiscount(null);
+        // Reaplica com o novo nível (pode ainda pedir gerente se for o caso)
+        if (level === "seller") {
+          const value = Number(pending);
+          if (Number.isFinite(value) && value > maxSellerDiscount + 0.001) {
+            setPendingDiscount(pending);
+            setAuthModal("manager");
+            return;
+          }
+        }
+        setForm((f) => ({ ...f, discount: pending }));
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const addPaymentLine = () => {
+    setForm((f) => {
+      const next = [...f.paymentSplits, { method: "pix" as PaymentMethod, amount: "" }];
+      // Se havia uma linha com valor vazio (= total implícito), materializa o total atual
+      if (f.paymentSplits.length === 1 && f.paymentSplits[0].amount.trim() === "") {
+        next[0] = { ...f.paymentSplits[0], amount: String(totals.total) };
+      }
+      return { ...f, paymentSplits: next };
+    });
+  };
+
+  const updatePaymentLine = (index: number, upd: Partial<FormPaymentLine>) => {
+    setForm((f) => ({
+      ...f,
+      paymentSplits: f.paymentSplits.map((line, i) => (i === index ? { ...line, ...upd } : line)),
+    }));
+  };
+
+  const removePaymentLine = (index: number) => {
+    setForm((f) => {
+      if (f.paymentSplits.length <= 1) return f;
+      const paymentSplits = f.paymentSplits.filter((_, i) => i !== index);
+      return { ...f, paymentSplits };
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -196,14 +366,46 @@ export default function VendasPage() {
     const client = clients.find((c) => c.id === form.clientId);
     if (!client || form.items.length === 0) return;
 
-    if (form.paymentMethod === "boleto") {
-      let boletoParcelas: BoletoParcela[];
+    const discount = totals.discount;
+    const discountChanged =
+      !editing || roundMoney(editing.discount || 0) !== roundMoney(discount);
+
+    // Só exige senha quando o vendedor aplica/altera desconto nesta sessão
+    if (vendedorLocked && discount > 0 && discountChanged) {
+      if (!discountAuthLevel) {
+        alert("Para aplicar desconto, desbloqueie o campo com a sua senha.");
+        requestDiscountUnlock();
+        return;
+      }
+      if (discount > maxSellerDiscount + 0.001 && discountAuthLevel !== "manager") {
+        alert(`Desconto acima de ${DESCONTO_MAX_VENDEDOR_PCT}% exige autorização de gerente ou administrador.`);
+        setPendingDiscount(form.discount);
+        setAuthModal("manager");
+        return;
+      }
+    }
+
+    if (resolvedPaymentSplits.length === 0) {
+      alert("Informe ao menos uma forma de pagamento.");
+      return;
+    }
+    if (Math.abs(paymentSum - totals.total) > 0.009) {
+      alert(
+        `A soma das formas de pagamento (R$ ${paymentSum.toFixed(2)}) deve ser igual ao total da venda (R$ ${totals.total.toFixed(2)}).`
+      );
+      return;
+    }
+
+    let boletoParcelas: BoletoParcela[] | undefined;
+    if (hasBoletoPayment) {
+      const boletoAmount =
+        resolvedPaymentSplits.find((s) => s.method === "boleto")?.amount ?? totals.total;
       if (editing?.boletoParcelas?.length) {
         boletoParcelas = editing.boletoParcelas;
       } else {
         const num = Math.min(6, Math.max(1, form.boletoNumParcelas));
         const primeiroVenc = form.boletoPrimeiroVencimento || format(new Date(), "yyyy-MM-dd");
-        const valorParcela = totals.total / num;
+        const valorParcela = boletoAmount / num;
         boletoParcelas = [];
         for (let i = 0; i < num; i++) {
           const dueDate = format(addMonths(parseISO(primeiroVenc), i), "yyyy-MM-dd");
@@ -212,55 +414,15 @@ export default function VendasPage() {
           boletoParcelas.push({
             id: generateId(),
             dueDate,
-            amount: Math.round(valorParcela * 100) / 100,
+            amount: roundMoney(valorParcela),
             status,
           });
         }
       }
-
-      const effectiveSellerId = vendedorLocked ? (currentUser?.id ?? "") : form.sellerId;
-      const seller = vendedoresOptions.find((u) => u.id === effectiveSellerId) ?? currentUser ?? undefined;
-      const items: SaleItem[] = form.items.map((it) => {
-        const p = products.find((x) => x.id === it.productId);
-        const total = it.quantity * it.unitPrice;
-        return {
-          productId: it.productId,
-          productName: p?.name ?? "Produto",
-          quantity: it.quantity,
-          unitPrice: it.unitPrice,
-          total,
-        };
-      });
-
-      const payload = {
-        clientId: form.clientId,
-        clientName: client.name,
-        sellerId: effectiveSellerId || undefined,
-        sellerName: seller?.name,
-        paymentMethod: "boleto" as const,
-        boletoParcelas,
-        prescriptionId: form.prescriptionId || undefined,
-        items,
-        subtotal: totals.subtotal,
-        discount: form.discount,
-        total: totals.total,
-        status: form.status,
-        expectedDeliveryDate: form.expectedDeliveryDate || undefined,
-        notes: form.notes || undefined,
-      };
-
-      if (editing) {
-        updateSale(editing.id, payload);
-      } else {
-        addSale(payload);
-      }
-      setShowForm(false);
-      return;
     }
 
     const effectiveSellerId = vendedorLocked ? (currentUser?.id ?? "") : form.sellerId;
     const seller = vendedoresOptions.find((u) => u.id === effectiveSellerId) ?? currentUser ?? undefined;
-
     const items: SaleItem[] = form.items.map((it) => {
       const p = products.find((x) => x.id === it.productId);
       const total = it.quantity * it.unitPrice;
@@ -278,12 +440,13 @@ export default function VendasPage() {
       clientName: client.name,
       sellerId: effectiveSellerId || undefined,
       sellerName: seller?.name,
-      paymentMethod: form.paymentMethod,
-      boletoParcelas: undefined as BoletoParcela[] | undefined,
+      paymentMethod: resolvedPaymentSplits[0].method,
+      paymentSplits: resolvedPaymentSplits,
+      boletoParcelas,
       prescriptionId: form.prescriptionId || undefined,
       items,
       subtotal: totals.subtotal,
-      discount: form.discount,
+      discount,
       total: totals.total,
       status: form.status,
       expectedDeliveryDate: form.expectedDeliveryDate || undefined,
@@ -296,6 +459,7 @@ export default function VendasPage() {
       addSale(payload);
     }
     setShowForm(false);
+    resetDiscountAuth();
   };
 
   const handleDarBaixaBoleto = () => {
@@ -414,7 +578,7 @@ export default function VendasPage() {
                 </p>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className="text-home-muted text-xs">
-                    {s.paymentMethod ? PAYMENT_LABELS[s.paymentMethod] : "—"}
+                    {formatPaymentSummary(s)}
                   </span>
                   <span
                     className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium ${
@@ -493,7 +657,7 @@ export default function VendasPage() {
                   <td className="py-3.5 px-5 text-home-light">{s.clientName}</td>
                   <td className="py-3.5 px-5 text-home-muted">{s.sellerName ?? "—"}</td>
                   <td className="py-3.5 px-5 text-home-muted text-sm">
-                    {s.paymentMethod ? PAYMENT_LABELS[s.paymentMethod] : "—"}
+                    {formatPaymentSummary(s)}
                   </td>
                   <td className="py-3.5 px-5 text-right text-home-light font-medium">
                     R$ {s.total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
@@ -611,7 +775,7 @@ export default function VendasPage() {
                 </div>
                 <div>
                   <span className="text-home-muted text-sm block mb-0.5">Forma de pagamento</span>
-                  <p>{viewing.paymentMethod ? PAYMENT_LABELS[viewing.paymentMethod] : "—"}</p>
+                  <p>{formatPaymentSummary(viewing)}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -636,7 +800,7 @@ export default function VendasPage() {
                 );
               })()}
 
-              {viewing.paymentMethod === "boleto" && viewing.boletoParcelas && viewing.boletoParcelas.length > 0 && (
+              {viewing.boletoParcelas && viewing.boletoParcelas.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-home-muted text-sm block">Parcelas do boleto</span>
@@ -839,16 +1003,55 @@ export default function VendasPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-home-muted mb-1">Forma de pagamento</label>
-                  <select
-                    value={form.paymentMethod}
-                    onChange={(e) => setForm((f) => ({ ...f, paymentMethod: e.target.value as PaymentMethod }))}
-                    className="input-field"
-                  >
-                    {Object.entries(PAYMENT_LABELS).map(([v, l]) => (
-                      <option key={v} value={v}>{l}</option>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-home-muted">Formas de pagamento</label>
+                    <button
+                      type="button"
+                      onClick={addPaymentLine}
+                      className="text-sm text-home-blue hover:underline"
+                    >
+                      + Combinar pagamento
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {form.paymentSplits.map((line, i) => (
+                      <div key={i} className="flex flex-wrap items-center gap-2">
+                        <select
+                          value={line.method}
+                          onChange={(e) => updatePaymentLine(i, { method: e.target.value as PaymentMethod })}
+                          className="input-field flex-1 min-w-[140px]"
+                        >
+                          {Object.entries(PAYMENT_LABELS).map(([v, l]) => (
+                            <option key={v} value={v}>{l}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder={form.paymentSplits.length === 1 ? "Total" : "Valor"}
+                          value={line.amount}
+                          onChange={(e) => updatePaymentLine(i, { amount: e.target.value })}
+                          className="input-field w-28"
+                        />
+                        {form.paymentSplits.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removePaymentLine(i)}
+                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
+                            aria-label="Remover forma de pagamento"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     ))}
-                  </select>
+                  </div>
+                  {form.paymentSplits.length > 1 && (
+                    <p className={`text-xs mt-1 ${Math.abs(paymentSum - totals.total) > 0.009 ? "text-amber-400" : "text-home-muted"}`}>
+                      Soma: R$ {paymentSum.toFixed(2)} / Total: R$ {totals.total.toFixed(2)}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -867,7 +1070,7 @@ export default function VendasPage() {
                 );
               })()}
 
-              {form.paymentMethod === "boleto" && (
+              {hasBoletoPayment && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-home-gray/10 border border-home-gray/20">
                   <h3 className="sm:col-span-2 text-sm font-semibold text-home-light">Boleto (até 6x)</h3>
                   <div>
@@ -892,7 +1095,10 @@ export default function VendasPage() {
                     />
                   </div>
                   <p className="sm:col-span-2 text-xs text-home-muted">
-                    Valor por parcela: R$ {(totals.total / form.boletoNumParcelas).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}. Após vencimento: multa de R$ 14,99 + 3% ao dia.
+                    Valor do boleto: R$ {(resolvedPaymentSplits.find((s) => s.method === "boleto")?.amount ?? totals.total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    {" · "}
+                    Valor por parcela: R$ {(((resolvedPaymentSplits.find((s) => s.method === "boleto")?.amount ?? totals.total) / form.boletoNumParcelas) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}.
+                    Após vencimento: multa de R$ 14,99 + 3% ao dia.
                   </p>
                 </div>
               )}
@@ -973,17 +1179,43 @@ export default function VendasPage() {
               <div className="flex flex-wrap gap-4 items-end">
                 <div>
                   <label className="block text-sm font-medium text-home-muted mb-1">Desconto (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={form.discount}
-                    onChange={(e) => setForm((f) => ({ ...f, discount: Number(e.target.value) || 0 }))}
-                    className="input-field w-28"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder=""
+                      value={form.discount}
+                      disabled={vendedorLocked && !discountUnlocked}
+                      onChange={(e) => applyDiscountValue(e.target.value)}
+                      className="input-field w-28 disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    {vendedorLocked && (
+                      <button
+                        type="button"
+                        onClick={requestDiscountUnlock}
+                        className="p-2 text-home-muted hover:text-home-blue hover:bg-home-blue/20 rounded-xl transition-colors"
+                        title={discountUnlocked ? "Desconto desbloqueado" : "Desbloquear desconto com senha"}
+                        aria-label="Desbloquear desconto"
+                      >
+                        {discountUnlocked ? <Unlock className="w-4 h-4 text-home-blue" /> : <Lock className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
+                  {vendedorLocked && (
+                    <p className="text-xs text-home-muted mt-1">
+                      Até {DESCONTO_MAX_VENDEDOR_PCT}% (R$ {maxSellerDiscount.toFixed(2)}) com sua senha.
+                      Acima disso: gerente/admin.
+                      {discountAuthLevel === "manager" && " · Autorizado por gerente/admin."}
+                      {discountAuthLevel === "seller" && " · Liberado com sua senha."}
+                    </p>
+                  )}
                 </div>
                 <div className="ml-auto text-right">
                   <p className="text-home-muted text-sm">Subtotal: R$ {totals.subtotal.toFixed(2)}</p>
+                  {totals.discount > 0 && (
+                    <p className="text-amber-400 text-sm">Desconto: - R$ {totals.discount.toFixed(2)}</p>
+                  )}
                   <p className="text-lg font-bold text-home-light">Total: R$ {totals.total.toFixed(2)}</p>
                 </div>
               </div>
@@ -1126,6 +1358,76 @@ export default function VendasPage() {
           </>
         )}
       </ModalLarge>
+
+      {/* Modal autorização de desconto */}
+      <Modal
+        open={authModal !== null}
+        onClose={() => {
+          if (authLoading) return;
+          setAuthModal(null);
+          setAuthPassword("");
+          setAuthEmail("");
+          setAuthError("");
+          setPendingDiscount(null);
+        }}
+        className="p-6"
+      >
+        <h2 className="text-lg font-semibold text-home-light mb-2 flex items-center gap-2">
+          <Lock className="w-5 h-5" />
+          {authModal === "manager" ? "Autorização de gerente/admin" : "Desbloquear desconto"}
+        </h2>
+        <p className="text-home-muted text-sm mb-4">
+          {authModal === "manager"
+            ? `Desconto acima de ${DESCONTO_MAX_VENDEDOR_PCT}% do subtotal exige e-mail e senha de gerente ou administrador.`
+            : "Informe sua senha para liberar o campo de desconto (até 5% do subtotal)."}
+        </p>
+        <form onSubmit={submitDiscountAuth} className="space-y-3">
+          {authModal === "manager" && (
+            <div>
+              <label className="block text-sm font-medium text-home-muted mb-1">E-mail do gerente/admin</label>
+              <input
+                type="email"
+                required
+                autoComplete="username"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-home-muted mb-1">Senha</label>
+            <input
+              type="password"
+              required
+              autoComplete="current-password"
+              value={authPassword}
+              onChange={(e) => setAuthPassword(e.target.value)}
+              className="input-field"
+            />
+          </div>
+          {authError && <p className="text-sm text-red-400">{authError}</p>}
+          <div className="flex gap-3 pt-2">
+            <button type="submit" disabled={authLoading} className="btn-primary flex-1 disabled:opacity-50">
+              {authLoading ? "Validando..." : "Autorizar"}
+            </button>
+            <button
+              type="button"
+              disabled={authLoading}
+              onClick={() => {
+                setAuthModal(null);
+                setAuthPassword("");
+                setAuthEmail("");
+                setAuthError("");
+                setPendingDiscount(null);
+              }}
+              className="btn-secondary"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Área para impressão do boleto (fora da tela; exibida ao imprimir) */}
       <div
