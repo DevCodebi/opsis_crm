@@ -4,7 +4,7 @@ Documentação técnica do sistema de gestão e vendas da Home Ótica.
 
 ## Visão geral
 
-Sistema web para gestão de uma ótica: cadastro de clientes (e-mail opcional), produtos (armações, lentes, acessórios), receituário médico (graus OD/OS), vendas (incluindo parcelamento via boleto, data prevista de entrega e comprovante em impressão/PDF) e controle de usuários por convite. Inclui um dashboard com indicadores de faturamento, vendas, produtos mais vendidos, aniversariantes do mês e alertas de estoque mínimo.
+Sistema web para gestão de uma ótica: cadastro de clientes (e-mail opcional), produtos (armações, lentes, acessórios), receituário médico (graus OD/OS), vendas (pagamento único ou combinado, parcelamento via boleto, desconto com autorização por senha no nível vendedor, data prevista de entrega e comprovante em impressão/PDF) e controle de usuários por convite. Inclui um dashboard com indicadores de faturamento, vendas, produtos mais vendidos, aniversariantes do mês e alertas de estoque mínimo.
 
 A aplicação é um app Next.js único (pasta `crm/`) com todos os dados armazenados no Supabase (Postgres + Auth), substituindo a versão inicial que guardava tudo no localStorage do navegador.
 
@@ -31,14 +31,16 @@ App Home Ótica/
     ├── .env.local         # chaves do Supabase (não versionar)
     ├── netlify.toml       # build Netlify (plugin Next.js)
     ├── supabase/
-    │   ├── schema.sql                         # tabelas + RLS (idempotente)
-    │   └── migration-activate-convidado.sql   # policy SELECT do próprio perfil
+    │   ├── schema.sql                                    # tabelas + RLS (idempotente)
+    │   ├── migration-activate-convidado.sql              # policy SELECT do próprio perfil
+    │   └── migration-vendedor-cadastro-pagamento.sql     # vendedor cadastro + paymentSplits
     └── src/
         ├── app/
         │   ├── login/page.tsx                 # tela de login (+ "esqueci minha senha")
         │   ├── definir-senha/page.tsx         # 1º acesso (convite) e recuperação de senha
         │   ├── api/users/route.ts             # convidar/editar/excluir funcionários (admin)
         │   ├── api/activate-profile/route.ts  # ativa perfil após definir senha (próprio usuário)
+        │   ├── api/authorize-discount/route.ts # valida senha de desconto sem trocar sessão
         │   └── (main)/                        # área logada
         │       ├── layout.tsx                 # guarda de rota (redireciona pra /login se não autenticado)
         │       ├── page.tsx                   # dashboard
@@ -49,7 +51,8 @@ App Home Ótica/
         │       └── usuarios/page.tsx
         ├── components/    # Sidebar, Header, Modal, RequireRole, PrescriptionSummary…
         ├── lib/
-        │   ├── access.ts          # papéis e permissões da UI
+        │   ├── access.ts          # papéis e permissões da UI (ROLES_CADASTRO, limite 5%)
+        │   ├── payments.ts        # labels e resumo de pagamento combinado
         │   ├── store.tsx          # contexto React (CRUD + auth)
         │   ├── supabaseClient.ts  # cliente Supabase do navegador (anon key)
         │   ├── supabaseAdmin.ts   # cliente Supabase server-only (service_role key)
@@ -80,7 +83,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 - `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`: públicas, usadas pelo navegador para ler/gravar dados (clientes, produtos, receituários, vendas) respeitando as regras de RLS.
-- `SUPABASE_SERVICE_ROLE_KEY`: secreta, usada **somente** nas rotas de API do servidor (`src/app/api/users/route.ts` e `src/app/api/activate-profile/route.ts`) — nunca no navegador nem com prefixo `NEXT_PUBLIC_`.
+- `SUPABASE_SERVICE_ROLE_KEY`: secreta, usada **somente** nas rotas de API do servidor (`src/app/api/users/route.ts`, `src/app/api/activate-profile/route.ts` e `src/app/api/authorize-discount/route.ts`) — nunca no navegador nem com prefixo `NEXT_PUBLIC_`.
 
 ### Setup inicial do banco (uma vez só)
 
@@ -107,7 +110,7 @@ Se a variável `NEXT_PUBLIC_SITE_URL` não estiver definida em `.env.local`, a A
 | `clients` | Clientes da ótica: dados pessoais, contato e endereço. |
 | `products` | Armações, lentes e acessórios: preço, custo, estoque, fornecedor. |
 | `prescriptions` | Receituário médico por cliente: graus OD/OS (SPH, CYL, AXIS, ADD), distância pupilar (PD), médico responsável. |
-| `sales` | Vendas: itens, forma de pagamento, status, data prevista de entrega (`expectedDeliveryDate`), parcelas de boleto (com multa/juros por atraso calculados no front-end). |
+| `sales` | Vendas: itens, forma de pagamento (`paymentMethod` + `paymentSplits` para combinação), status, desconto, data prevista de entrega (`expectedDeliveryDate`), parcelas de boleto (com multa/juros por atraso calculados no front-end). |
 
 Todas as colunas usam nomes em camelCase (entre aspas no SQL) para bater 1:1 com os tipos TypeScript em `src/types/index.ts`.
 
@@ -116,10 +119,18 @@ Todas as colunas usam nomes em camelCase (entre aspas no SQL) para bater 1:1 com
 | Papel | Acesso |
 |---|---|
 | `admin` | Tudo, incluindo a tela de Usuários |
-| `gerente` | Dashboard completo, Clientes, Produtos, Receituário, Vendas (todas) |
-| `vendedor` | Dashboard **somente** com o total das próprias vendas; Vendas só as que ele registrou |
+| `gerente` | Dashboard completo, Clientes, Produtos, Receituário, Vendas (todas); desconto sem bloqueio de senha |
+| `vendedor` | Dashboard **somente** com o total das próprias vendas; Clientes e Receituário (cadastrar/editar, sem excluir); Vendas só as que ele registrou; Produtos e Usuários bloqueados |
 
-Regras centralizadas em `crm/src/lib/access.ts`. O menu usa essas regras em `Sidebar.tsx`. Páginas sensíveis são protegidas por `RequireRole` (bloqueia URL direta): Clientes/Produtos/Receituário → `admin`/`gerente`; Usuários → só `admin`. Na tela de Vendas, o vendedor tem o campo vendedor travado nele e não exclui vendas. **O mesmo controle existe no banco via RLS** (ver seção abaixo).
+Regras centralizadas em `crm/src/lib/access.ts`:
+
+- `ROLES_CADASTRO` (`admin` / `gerente` / `vendedor`) — Clientes e Receituário
+- `ROLES_GESTAO` (`admin` / `gerente`) — Produtos
+- `ROLES_USUARIOS` (`admin`) — Usuários
+- `ROLES_VENDAS` — Dashboard e Vendas
+- `DESCONTO_MAX_VENDEDOR_PCT = 5` — teto liberado com a senha do próprio vendedor
+
+O menu usa essas regras em `Sidebar.tsx`. Páginas sensíveis são protegidas por `RequireRole`. Na tela de Vendas, o vendedor tem o campo vendedor travado nele e não exclui vendas. **O mesmo controle existe no banco via RLS** (ver seção abaixo).
 
 ## Segurança (Row Level Security)
 
@@ -130,15 +141,15 @@ Todas as tabelas (`profiles`, `clients`, `products`, `prescriptions`, `sales`) t
 
 Ambas são `security definer` (rodam com privilégio elevado só para essa leitura pontual em `profiles`), o que evita recursão entre a política de `profiles` e a própria função que a consulta.
 
-| Tabela | SELECT | INSERT / UPDATE / DELETE |
-|---|---|---|
-| `profiles` | (1) Qualquer usuário ativo (listar nomes na UI); (2) o próprio registro (`auth.uid() = id`), mesmo com status `convidado` — policy `profiles_select_own` | Nenhuma política de UPDATE/DELETE para o navegador — convite/edição/exclusão passam por `/api/users` (admin + `service_role`); ativação após senha passa por `/api/activate-profile` (JWT do próprio usuário + `service_role`) |
-| `clients` | Qualquer usuário ativo (vendedor precisa consultar clientes para montar uma venda) | Só `admin`/`gerente` |
-| `products` | Qualquer usuário ativo (vendedor precisa ver produto/preço na venda) | Só `admin`/`gerente` |
-| `prescriptions` | Qualquer usuário ativo (vendedor precisa ver o receituário ao vincular numa venda) | Só `admin`/`gerente` |
-| `sales` | `admin`/`gerente` veem todas; `vendedor` só as vendas em que ele é o vendedor (`sellerId = auth.uid()`) | INSERT: qualquer ativo. UPDATE: `admin`/`gerente` em qualquer venda, `vendedor` só nas próprias. DELETE: só `admin`/`gerente` |
+| Tabela | SELECT | INSERT / UPDATE | DELETE |
+|---|---|---|---|
+| `profiles` | (1) Qualquer usuário ativo (listar nomes na UI); (2) o próprio registro (`auth.uid() = id`), mesmo com status `convidado` — policy `profiles_select_own` | Nenhuma política de UPDATE/DELETE para o navegador — convite/edição/exclusão passam por `/api/users` (admin + `service_role`); ativação após senha passa por `/api/activate-profile` (JWT do próprio usuário + `service_role`) | — |
+| `clients` | Qualquer usuário ativo | `admin` / `gerente` / `vendedor` | Só `admin`/`gerente` |
+| `products` | Qualquer usuário ativo (vendedor precisa ver produto/preço na venda) | Só `admin`/`gerente` | Só `admin`/`gerente` |
+| `prescriptions` | Qualquer usuário ativo | `admin` / `gerente` / `vendedor` | Só `admin`/`gerente` |
+| `sales` | `admin`/`gerente` veem todas; `vendedor` só as vendas em que ele é o vendedor (`sellerId = auth.uid()`) | INSERT: qualquer ativo. UPDATE: `admin`/`gerente` em qualquer venda, `vendedor` só nas próprias | Só `admin`/`gerente` |
 
-Essa última regra muda um comportamento visível: antes, qualquer papel via e podia excluir qualquer venda na tela de Vendas; agora um `vendedor` só vê e só pode alterar as próprias vendas, e o botão de excluir some da interface pra esse papel (`canDeleteSale` em `vendas/page.tsx`) — reflexo direto da política do banco, pra UI nunca oferecer uma ação que o banco vai recusar.
+Na UI, o botão de excluir some para o vendedor em Clientes, Receituário e Vendas (`canDelete` / `canDeleteSale`) — reflexo direto da política do banco.
 
 ## Receituário na venda: associação cliente ↔ receita
 
@@ -147,6 +158,26 @@ O relacionamento é `prescriptions.clientId → clients.id` e `sales.clientId �
 Como reforço extra, tanto o preview no formulário quanto o modal de visualização da venda (`vendas/page.tsx`) e o componente `PrescriptionSummary` só renderizam o receituário se `prescription.clientId` bater exatamente com o cliente da venda — se por algum motivo os dados estiverem desalinhados, o sistema simplesmente não exibe nada em vez de mostrar a receita errada.
 
 A FK `sales.prescriptionId` passou a ter `ON DELETE SET NULL`: excluir um receituário antigo desfaz o vínculo da venda em vez de travar a exclusão ou apagar a venda.
+
+## Pagamento combinado e desconto na venda
+
+### Pagamento combinado
+
+Na tela de Vendas é possível usar mais de uma forma de pagamento na mesma venda (ex.: dinheiro + cartão). O formulário começa com uma linha e o botão **Combinar pagamento** adiciona outras. A soma dos valores deve fechar o total da venda.
+
+- Coluna `sales.paymentSplits` (jsonb): array de `{ method, amount }`
+- `sales.paymentMethod` continua preenchido com a 1ª forma (compatível com vendas antigas)
+- Resumo/exibição: `crm/src/lib/payments.ts` (`formatPaymentSummary`)
+- Se houver boleto entre as formas, o bloco de parcelas usa o valor da parcela de boleto
+
+### Desconto com senha (nível vendedor)
+
+- Campo de desconto inicia **vazio** (sem zero pré-preenchido)
+- **Gerente/admin:** editam livremente
+- **Vendedor:** campo bloqueado até informar a **própria senha** (libera até **5%** do subtotal)
+- Acima de 5%: modal pede **e-mail + senha de gerente ou admin**
+- Validação sem trocar a sessão do vendedor: `POST /api/authorize-discount` (`mode: "self" | "manager"`)
+- Constante: `DESCONTO_MAX_VENDEDOR_PCT` em `crm/src/lib/access.ts`
 
 ## Autenticação e cadastro de usuários
 
@@ -164,7 +195,7 @@ O dashboard permite exportar o período filtrado em **CSV** ou **Excel (XLSX)**,
 
 ## Comprovante de venda (impressão e PDF)
 
-Na visualização de uma venda, os botões **Imprimir** e **Exportar PDF** geram o mesmo conteúdo (cliente, data da venda, data prevista de entrega e o receituário completo, se houver) a partir da mesma função em `src/lib/salePrint.ts` — evita que os dois formatos fiquem dessincronizados.
+Na visualização de uma venda, os botões **Imprimir** e **Exportar PDF** geram o mesmo conteúdo (cliente, data da venda, data prevista de entrega, forma(s) de pagamento e o receituário completo, se houver) a partir da mesma função em `src/lib/salePrint.ts` — evita que os dois formatos fiquem dessincronizados.
 
 - **Imprimir** reaproveita o mecanismo já usado para o boleto: renderiza um HTML numa área oculta e chama `window.print()`, com uma folha de estilo `@media print` (em `globals.css`) formatada para A4. O usuário pode imprimir de verdade ou usar "Salvar como PDF" do próprio navegador.
 - **Exportar PDF** gera o arquivo diretamente com `jsPDF` (texto vetorial, sem depender do diálogo de impressão do navegador), útil para anexar em WhatsApp/e-mail ou arquivar.
@@ -210,7 +241,9 @@ Fluxo completo:
 - API de administração: `crm/src/app/api/users/route.ts`.
 - API de ativação: `crm/src/app/api/activate-profile/route.ts`.
 - **Reenvio / redefinição:** confirma o e-mail no Auth (`email_confirm: true`) e dispara `resetPasswordForEmail` para `/definir-senha` — necessário porque convidados costumam ficar sem e-mail confirmado e o Supabase não envia recovery nesse estado.
-- Migration pontual (já aplicada em produção): `crm/supabase/migration-activate-convidado.sql` (`profiles_select_own`).
+- Migrations pontuais (já aplicadas em produção):
+  - `crm/supabase/migration-activate-convidado.sql` (`profiles_select_own`)
+  - `crm/supabase/migration-vendedor-cadastro-pagamento.sql` (`paymentSplits` + RLS de cadastro para vendedor)
 - E-mail padrão do Supabase (plano free) é limitado; para produção estável usa-se **SMTP próprio (Resend)** — ver checkpoint abaixo.
 
 ## Publicação (deploy) — GitHub + Netlify + Supabase
@@ -239,19 +272,27 @@ Supabase + schema, GitHub, Netlify, variáveis de ambiente, primeiro deploy ok, 
 3. **PR #3 — Correção reenvio de convite** (erro “already been registered”).
 4. **PR #4 — Melhora envio de e-mail** (confirma e-mail antes do recovery; mensagem de rate limit).
 5. **PR #6 — Ativar convidado ao definir senha** (`/api/activate-profile` + policy `profiles_select_own`; login com mensagens para `convidado`/`inativo`).
+6. **PR #8 — Vendedor + pagamento combinado + desconto com senha** (vendedor cadastra/edita clientes e receituário; `paymentSplits`; desconto bloqueado por senha até 5%, acima exige gerente/admin; `/api/authorize-discount`).
 
 **Infra / domínio:**
 
-6. Projeto Netlify renomeado para **`opsis-crm`** (`opsis-crm.netlify.app`).
-7. Domínio **`opsiscrm.com.br`** (DNS na **Hostinger**; nameservers `*.dns-parking.com`).
-8. DNS do site na Hostinger → Netlify:
+7. Projeto Netlify renomeado para **`opsis-crm`** (`opsis-crm.netlify.app`).
+8. Domínio **`opsiscrm.com.br`** (DNS na **Hostinger**; nameservers `*.dns-parking.com`).
+9. DNS do site na Hostinger → Netlify:
    - **A** `@` → `75.2.60.5`
    - **CNAME** `www` → `opsis-crm.netlify.app`
-9. Netlify: domínio primário `opsiscrm.com.br`, www redireciona; certificado Let’s Encrypt **ativo**.
-10. Conta **Resend** + registros DNS (DKIM / MX-TXT `send` / DMARC) na Hostinger.
-11. Migration `crm/supabase/migration-activate-convidado.sql` aplicada no Supabase de produção.
+10. Netlify: domínio primário `opsiscrm.com.br`, www redireciona; certificado Let’s Encrypt **ativo**.
+11. Conta **Resend** + registros DNS (DKIM / MX-TXT `send` / DMARC) na Hostinger.
+12. Migration `crm/supabase/migration-activate-convidado.sql` aplicada no Supabase de produção.
+13. Migration `crm/supabase/migration-vendedor-cadastro-pagamento.sql` aplicada no Supabase de produção (09/08/2026).
 
-### 🟡 Em andamento (retomar daqui — 08/08/2026)
+### ✅ Checkpoint — 09/08/2026 (vendedor no balcão)
+
+- PR #8 mergeado na `main` e publicado no Netlify.
+- Vendedor opera Clientes, Receituário e Vendas no dia a dia da loja.
+- Desconto e pagamento combinado disponíveis em produção (após migration no Supabase).
+
+### 🟡 Em andamento (retomar daqui — 09/08/2026)
 
 1. **Resend:** confirmar domínio `opsiscrm.com.br` **Verified** (se ainda não estiver).
 2. **Supabase Auth → URL Configuration:**

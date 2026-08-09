@@ -26,16 +26,18 @@ Configure `crm/.env.local` com `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE
 ## Funcionalidades
 
 - **Dashboard:** indicadores por papel (vendedor vê só o total das próprias vendas).
-- **Clientes / Produtos / Receituário:** admin e gerente.
-- **Vendas:** todos os ativos; vendedor só as próprias.
+- **Clientes / Receituário:** admin, gerente e vendedor (cadastrar/editar); exclusão só admin/gerente.
+- **Produtos:** admin e gerente.
+- **Vendas:** todos os ativos; vendedor só as próprias. Pagamento único ou combinado; desconto do vendedor com senha (até 5%; acima exige gerente/admin).
 - **Usuários:** só admin — convite por e-mail, reenvio, ativação automática após definir senha (`/api/activate-profile`).
-- **Comprovante:** impressão e PDF.
+- **Comprovante:** impressão e PDF (inclui formas de pagamento).
 
 ## Produção
 
 - Host: **Netlify** (base directory `crm`, ver `netlify.toml`)
 - Domínio: `https://opsiscrm.com.br` (também `https://opsis-crm.netlify.app`)
 - Deploy: automático a cada push/merge na `main`
+- Migrations aplicadas no Supabase: `migration-activate-convidado.sql`, `migration-vendedor-cadastro-pagamento.sql`
 
 ## Scripts
 
