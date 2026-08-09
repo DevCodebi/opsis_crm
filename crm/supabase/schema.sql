@@ -93,6 +93,7 @@ create table if not exists public.sales (
   "sellerId" uuid references public.profiles(id),
   "sellerName" text,
   "paymentMethod" text check ("paymentMethod" in ('dinheiro','pix','cartao_debito','cartao_credito','parcelado','boleto','outro')),
+  "paymentSplits" jsonb,         -- array de { method, amount } para pagamento combinado
   "boletoParcelas" jsonb,        -- array de { id, dueDate, amount, status, paidAt, paymentMethodUsed }
   -- ON DELETE SET NULL: excluir um receituário antigo não pode travar a
   -- exclusão nem apagar o histórico da venda — só desfaz o vínculo.
@@ -173,8 +174,16 @@ alter table public.sales enable row level security;
 drop policy if exists "profiles_select_authenticated" on public.profiles;
 drop policy if exists "profiles_update_own_or_admin" on public.profiles;
 drop policy if exists "clients_all_authenticated" on public.clients;
+drop policy if exists "clients_write_admin_gerente" on public.clients;
+drop policy if exists "clients_update_admin_gerente" on public.clients;
+drop policy if exists "clients_write_cadastro" on public.clients;
+drop policy if exists "clients_update_cadastro" on public.clients;
 drop policy if exists "products_all_authenticated" on public.products;
 drop policy if exists "prescriptions_all_authenticated" on public.prescriptions;
+drop policy if exists "prescriptions_write_admin_gerente" on public.prescriptions;
+drop policy if exists "prescriptions_update_admin_gerente" on public.prescriptions;
+drop policy if exists "prescriptions_write_cadastro" on public.prescriptions;
+drop policy if exists "prescriptions_update_cadastro" on public.prescriptions;
 drop policy if exists "sales_all_authenticated" on public.sales;
 
 -- ---------- PROFILES ----------
@@ -193,16 +202,15 @@ create policy "profiles_select_own" on public.profiles
 -- com service_role. Deixar UPDATE sem política no client é reforço de segurança.
 
 -- ---------- CLIENTS ----------
--- Leitura: qualquer usuário ativo (o vendedor precisa consultar clientes
--- para registrar uma venda, mesmo sem acesso à tela de Clientes).
+-- Leitura: qualquer usuário ativo.
+-- Cadastro/edição: admin, gerente e vendedor. Exclusão: só admin/gerente.
 create policy "clients_select_active" on public.clients
   for select using (public.is_active_user());
--- Escrita: só quem tem acesso à tela de Clientes no menu (admin/gerente).
-create policy "clients_write_admin_gerente" on public.clients
-  for insert with check (public.has_role(array['admin','gerente']));
-create policy "clients_update_admin_gerente" on public.clients
-  for update using (public.has_role(array['admin','gerente']))
-  with check (public.has_role(array['admin','gerente']));
+create policy "clients_write_cadastro" on public.clients
+  for insert with check (public.has_role(array['admin','gerente','vendedor']));
+create policy "clients_update_cadastro" on public.clients
+  for update using (public.has_role(array['admin','gerente','vendedor']))
+  with check (public.has_role(array['admin','gerente','vendedor']));
 create policy "clients_delete_admin_gerente" on public.clients
   for delete using (public.has_role(array['admin','gerente']));
 
@@ -221,16 +229,15 @@ create policy "products_delete_admin_gerente" on public.products
   for delete using (public.has_role(array['admin','gerente']));
 
 -- ---------- PRESCRIPTIONS ----------
--- Leitura: qualquer usuário ativo (vendedor precisa ver o receituário do
--- cliente ao vincular numa venda).
+-- Leitura: qualquer usuário ativo.
+-- Cadastro/edição: admin, gerente e vendedor. Exclusão: só admin/gerente.
 create policy "prescriptions_select_active" on public.prescriptions
   for select using (public.is_active_user());
--- Escrita: só admin/gerente (mesma regra de acesso da tela de Receituário).
-create policy "prescriptions_write_admin_gerente" on public.prescriptions
-  for insert with check (public.has_role(array['admin','gerente']));
-create policy "prescriptions_update_admin_gerente" on public.prescriptions
-  for update using (public.has_role(array['admin','gerente']))
-  with check (public.has_role(array['admin','gerente']));
+create policy "prescriptions_write_cadastro" on public.prescriptions
+  for insert with check (public.has_role(array['admin','gerente','vendedor']));
+create policy "prescriptions_update_cadastro" on public.prescriptions
+  for update using (public.has_role(array['admin','gerente','vendedor']))
+  with check (public.has_role(array['admin','gerente','vendedor']));
 create policy "prescriptions_delete_admin_gerente" on public.prescriptions
   for delete using (public.has_role(array['admin','gerente']));
 

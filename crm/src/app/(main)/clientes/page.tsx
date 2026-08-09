@@ -6,22 +6,23 @@ import type { Client } from "@/types";
 import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { RequireRole } from "@/components/RequireRole";
-import { ROLES_GESTAO } from "@/lib/access";
+import { ROLES_CADASTRO, isGerenteOrAdmin } from "@/lib/access";
 
 export default function ClientesPage() {
   return (
-    <RequireRole allow={ROLES_GESTAO}>
+    <RequireRole allow={ROLES_CADASTRO}>
       <ClientesPageContent />
     </RequireRole>
   );
 }
 
 function ClientesPageContent() {
-  const { clients, addClient, updateClient, deleteClient } = useStore();
+  const { clients, addClient, updateClient, deleteClient, currentUser } = useStore();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<Partial<Client>>({});
   const [showForm, setShowForm] = useState(false);
+  const canDelete = isGerenteOrAdmin(currentUser?.role);
 
   const filtered = clients.filter(
     (c) =>
@@ -137,14 +138,16 @@ function ClientesPageContent() {
                 >
                   <Pencil className="w-5 h-5" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(c.id)}
-                  className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
-                  aria-label="Excluir cliente"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(c.id)}
+                    className="p-2.5 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors"
+                    aria-label="Excluir cliente"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -192,13 +195,15 @@ function ClientesPageContent() {
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(c.id)}
-                      className="p-2 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors duration-200"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(c.id)}
+                        className="p-2 text-home-muted hover:text-red-400 hover:bg-red-500/20 rounded-xl transition-colors duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
