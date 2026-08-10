@@ -18,16 +18,30 @@ npm run build
 npm run preview
 ```
 
-## Publicação gratuita (Netlify Drop / site novo)
+## Publicação gratuita (Netlify)
 
-1. Crie um site separado no Netlify (não misturar com o CRM).
-2. Conecte este repositório e defina:
-   - **Base directory:** `landing`
-   - **Build command:** `npm run build`
-   - **Publish directory:** `landing/dist`
-3. Ou arraste a pasta `landing/dist` em [Netlify Drop](https://app.netlify.com/drop) após o build.
+Site **separado** do CRM (`opsis-crm`). Domínio próprio da Da'at pode ser ligado depois.
 
-Domínio próprio da Da'at pode ser ligado depois; por enquanto use a URL `*.netlify.app`.
+### Deploy permanente (recomendado)
+
+1. Gere um Personal Access Token em Netlify → User settings → Applications.
+2. `NETLIFY_AUTH_TOKEN=<token> npx netlify-cli sites:create --name daat-technologies --manual`
+3. Com o `site_id` criado:
+   ```bash
+   cd landing
+   npm run build
+   NETLIFY_AUTH_TOKEN=<token> npx netlify-cli deploy --dir=dist --prod --site=<site_id>
+   ```
+4. Ou conecte o repositório no Netlify com **Base directory** `landing`, build `npm run build`, publish `dist`.
+
+### Deploy rápido de teste (Drop)
+
+```bash
+cd landing && npm run build
+# Arraste landing/dist em https://app.netlify.com/drop
+```
+
+Drops não reclamados expiram (~1h) e podem exigir a senha temporária `My-Drop-Site`.
 
 ## Contato
 
