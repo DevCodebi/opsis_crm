@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
+import { NeuralField } from "./NeuralField";
 
 const CONTACT_MAIL = "mailto:contato@devcode.com?subject=Contato%20Da'at%20Technologies";
 
@@ -12,6 +13,7 @@ export function SiteShell({ children, brandHref = "/" }: Props) {
   return (
     <div className="page">
       <div className="atmosphere" aria-hidden="true">
+        <NeuralField />
         <div className="orb orb-a" />
         <div className="orb orb-b" />
         <div className="grid-wash" />
