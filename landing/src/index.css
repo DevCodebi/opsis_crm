@@ -51,8 +51,9 @@ p {
 
 .page {
   position: relative;
-  overflow-x: clip;
+  overflow-x: hidden;
   min-height: 100vh;
+  width: 100%;
 }
 
 .atmosphere {
@@ -125,7 +126,7 @@ main,
   gap: 1rem;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 1.25rem 1.5rem;
+  padding: 1.25rem clamp(1rem, 4vw, 1.5rem);
 }
 
 .nav-brand {
@@ -152,7 +153,7 @@ main,
 .hero {
   max-width: 1120px;
   margin: 0 auto;
-  padding: clamp(3.5rem, 12vh, 7rem) 1.5rem 5rem;
+  padding: clamp(2.5rem, 10vh, 7rem) clamp(1rem, 4vw, 1.5rem) clamp(3rem, 8vh, 5rem);
   min-height: calc(100svh - 4.5rem);
   display: flex;
   flex-direction: column;
@@ -162,30 +163,37 @@ main,
 .brand {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(2.6rem, 8vw, 5.4rem);
-  line-height: 0.95;
-  letter-spacing: -0.045em;
+  font-size: clamp(2.15rem, 7.2vw, 5.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
   color: var(--olive-bright);
-  max-width: 14ch;
-  margin-bottom: 1.5rem;
+  max-width: 100%;
+  width: 100%;
+  margin-bottom: 1.35rem;
+}
+
+.brand-line {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .headline {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(1.45rem, 3.4vw, 2.15rem);
-  line-height: 1.2;
+  font-size: clamp(1.3rem, 3.2vw, 2.15rem);
+  line-height: 1.25;
   letter-spacing: -0.03em;
-  max-width: 18ch;
+  max-width: min(18ch, 100%);
   margin-bottom: 1.1rem;
   color: var(--ink);
 }
 
 .lede {
-  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  font-size: clamp(1rem, 2vw, 1.2rem);
   line-height: 1.55;
   color: var(--ink-soft);
-  max-width: 36ch;
+  max-width: min(36ch, 100%);
   margin-bottom: 2rem;
 }
 
@@ -193,6 +201,7 @@ main,
   display: flex;
   flex-wrap: wrap;
   gap: 0.85rem;
+  width: 100%;
 }
 
 .btn {
@@ -236,7 +245,7 @@ main,
 .contact {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 4.5rem 1.5rem;
+  padding: clamp(3rem, 8vw, 4.5rem) clamp(1rem, 4vw, 1.5rem);
 }
 
 .eyebrow {
@@ -253,18 +262,20 @@ main,
 .contact h2 {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-size: clamp(1.65rem, 5.5vw, 2.6rem);
   letter-spacing: -0.035em;
-  line-height: 1.1;
+  line-height: 1.15;
   margin-bottom: 1rem;
   color: var(--ink);
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .section-copy {
-  font-size: 1.08rem;
+  font-size: clamp(1rem, 2.4vw, 1.08rem);
   line-height: 1.6;
   color: var(--ink-soft);
-  max-width: 46ch;
+  max-width: min(46ch, 100%);
 }
 
 .product-panel {
@@ -436,7 +447,7 @@ main,
 .footer {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 2.5rem;
+  padding: 1.5rem clamp(1rem, 4vw, 1.5rem) 2.5rem;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -458,16 +469,49 @@ main,
 
   .screen {
     transform: none;
+    width: 100%;
   }
 
   .hero {
     min-height: auto;
-    padding-top: 3rem;
-    padding-bottom: 3.5rem;
+    padding-top: 2.25rem;
+    padding-bottom: 3rem;
   }
 
   .brand {
-    max-width: none;
+    font-size: clamp(2rem, 11vw, 3.25rem);
+    letter-spacing: -0.03em;
+  }
+
+  .headline {
+    max-width: 100%;
+  }
+
+  .cta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .product-copy h3 {
+    font-size: clamp(1.15rem, 4.5vw, 1.35rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-brand {
+    font-size: 1.05rem;
+  }
+
+  .brand {
+    font-size: clamp(1.85rem, 10.5vw, 2.4rem);
+  }
+
+  .contact-panel {
+    padding: 1.5rem 1.15rem;
   }
 }
 

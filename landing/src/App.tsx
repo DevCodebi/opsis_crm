@@ -35,7 +35,8 @@ export default function App() {
             className="brand"
             {...(reduceMotion ? {} : fadeUp(0))}
           >
-            Da&apos;at Technologies
+            <span className="brand-line">Da&apos;at</span>
+            <span className="brand-line">Technologies</span>
           </motion.p>
           <motion.h1
             className="headline"
