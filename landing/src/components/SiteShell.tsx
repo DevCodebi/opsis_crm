@@ -23,9 +23,14 @@ export function SiteShell({ children, brandHref = "/" }: Props) {
         <Link className="nav-brand" to={brandHref}>
           Da&apos;at
         </Link>
-        <a className="nav-cta" href={CONTACT_MAIL}>
-          Fale Conosco
-        </a>
+        <nav className="nav-links" aria-label="Principal">
+          <Link className="nav-link" to="/sobre">
+            Sobre nós
+          </Link>
+          <a className="nav-cta" href={CONTACT_MAIL}>
+            Fale Conosco
+          </a>
+        </nav>
       </header>
 
       {children}
