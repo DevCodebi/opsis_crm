@@ -210,6 +210,15 @@ O produto (motor do sistema, reutilizável em outras óticas no futuro) se chama
 
 O campo e-mail do cliente é opcional — a ótica pode cadastrar um cliente só com nome e telefone. Todo o resto do sistema (vendas, receituário, dashboard) funciona normalmente nesse caso; os lugares que exibem ou buscam por e-mail tratam a ausência dele (mostram "—" na listagem, por exemplo).
 
+## Endereço por CEP (cadastro de cliente)
+
+No formulário de Clientes, ao informar um CEP válido (8 dígitos), o sistema consulta automaticamente:
+
+1. **ViaCEP** (`viacep.com.br`)
+2. Se falhar, **BrasilAPI** (`brasilapi.com.br`)
+
+e preenche **logradouro**, **bairro**, **cidade** e **UF**. Número e complemento ficam para o usuário. Há máscara `00000-000`, indicador de carregamento e mensagem se o CEP não existir. Utilitário: `crm/src/lib/cep.ts`. Ao salvar, o campo legado `address` é montado a partir dos campos separados.
+
 ## Scripts disponíveis (dentro de `crm/`)
 
 - `npm run dev` — servidor de desenvolvimento
