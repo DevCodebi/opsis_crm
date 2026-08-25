@@ -14,7 +14,7 @@
 | Correções de convite/e-mail no código | ✅ Publicados (PR #3 e #4) |
 | Ativar convidado após definir senha | ✅ Publicado (PR #6) + migration `migration-activate-convidado.sql` aplicada |
 | Vendedor cadastra clientes/receituário; pagamento combinado; desconto com senha | ✅ Publicado (PR #8) + migration `migration-vendedor-cadastro-pagamento.sql` aplicada |
-| Preenchimento automático de endereço por CEP | 🔧 Em PR #12 (ViaCEP + BrasilAPI) |
+| Preenchimento automático de endereço por CEP | ✅ Publicado (PR #12) — ViaCEP + BrasilAPI |
 | Deploy automático na `main` | ✅ Netlify redeploya a cada merge/push |
 | Resend + SMTP no Supabase | 🟡 Confirmar Verified + SMTP se ainda não estiver |
 | PWA / multi-tenant | ⏳ Fase seguinte |
