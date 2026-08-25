@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import type { Client } from "@/types";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { RequireRole } from "@/components/RequireRole";
 import { ROLES_CADASTRO, isGerenteOrAdmin } from "@/lib/access";
+import {
+  composeAddress,
+  fetchAddressByCep,
+  formatCep,
+  isValidCep,
+  onlyDigits,
+} from "@/lib/cep";
 
 export default function ClientesPage() {
   return (
@@ -22,6 +29,11 @@ function ClientesPageContent() {
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<Partial<Client>>({});
   const [showForm, setShowForm] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+  const cepAbortRef = useRef<AbortController | null>(null);
+  const numeroRef = useRef<HTMLInputElement | null>(null);
+  const lastFetchedCepRef = useRef<string>("");
   const canDelete = isGerenteOrAdmin(currentUser?.role);
 
   const filtered = clients.filter(
@@ -31,7 +43,23 @@ function ClientesPageContent() {
       c.phone.replace(/\D/g, "").includes(search.replace(/\D/g, ""))
   );
 
+  const resetCepState = () => {
+    cepAbortRef.current?.abort();
+    cepAbortRef.current = null;
+    setCepLoading(false);
+    setCepError(null);
+    lastFetchedCepRef.current = "";
+  };
+
+  const closeForm = () => {
+    resetCepState();
+    setShowForm(false);
+    setForm({});
+    setEditing(null);
+  };
+
   const openNew = () => {
+    resetCepState();
     setForm({
       name: "",
       email: "",
@@ -53,14 +81,105 @@ function ClientesPageContent() {
   };
 
   const openEdit = (c: Client) => {
-    setForm({ ...c });
+    resetCepState();
+    const formattedCep = c.cep ? formatCep(c.cep) : "";
+    // Evita reconsulta automática ao abrir edição com CEP já preenchido
+    if (isValidCep(formattedCep)) {
+      lastFetchedCepRef.current = onlyDigits(formattedCep);
+    }
+    setForm({
+      ...c,
+      cep: formattedCep,
+    });
     setEditing(c);
     setShowForm(true);
   };
 
+  const lookupCep = async (rawCep: string) => {
+    const digits = onlyDigits(rawCep);
+    if (!isValidCep(digits) || digits === lastFetchedCepRef.current) return;
+
+    cepAbortRef.current?.abort();
+    const controller = new AbortController();
+    cepAbortRef.current = controller;
+    setCepLoading(true);
+    setCepError(null);
+
+    try {
+      const address = await fetchAddressByCep(digits, controller.signal);
+      if (controller.signal.aborted) return;
+      lastFetchedCepRef.current = digits;
+      setForm((f) => ({
+        ...f,
+        cep: address.cep,
+        logradouro: address.logradouro,
+        bairro: address.bairro,
+        cidade: address.cidade,
+        uf: address.uf,
+        // ViaCEP às vezes traz complemento genérico; não sobrescreve o que o usuário já digitou
+        complemento: f.complemento?.trim()
+          ? f.complemento
+          : address.complemento || f.complemento,
+      }));
+      // Número quase nunca vem do CEP — foca para o usuário completar
+      requestAnimationFrame(() => numeroRef.current?.focus());
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      const message = e instanceof Error ? e.message : "Não foi possível consultar o CEP.";
+      setCepError(message);
+      lastFetchedCepRef.current = "";
+    } finally {
+      if (cepAbortRef.current === controller) {
+        setCepLoading(false);
+        cepAbortRef.current = null;
+      }
+    }
+  };
+
+  const handleCepChange = (value: string) => {
+    const formatted = formatCep(value);
+    const digits = onlyDigits(formatted);
+    setCepError(null);
+    setForm((f) => ({ ...f, cep: formatted }));
+
+    if (digits.length < 8) {
+      lastFetchedCepRef.current = "";
+      cepAbortRef.current?.abort();
+      setCepLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!showForm) return;
+    const digits = onlyDigits(form.cep ?? "");
+    if (digits.length !== 8) return;
+    if (digits === lastFetchedCepRef.current) return;
+
+    const timer = window.setTimeout(() => {
+      void lookupCep(digits);
+    }, 350);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dispara só quando o CEP muda
+  }, [form.cep, showForm]);
+
+  useEffect(() => {
+    return () => {
+      cepAbortRef.current?.abort();
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name?.trim() || !form.phone?.trim()) return;
+    const addressParts = {
+      logradouro: form.logradouro,
+      numero: form.numero,
+      complemento: form.complemento,
+      bairro: form.bairro,
+      cidade: form.cidade,
+      uf: form.uf,
+      cep: form.cep,
+    };
     const payload = {
       name: form.name!,
       email: form.email?.trim() || undefined,
@@ -68,8 +187,8 @@ function ClientesPageContent() {
       cpf: form.cpf,
       birthDate: form.birthDate,
       sex: form.sex,
-      address: form.address,
-      cep: form.cep,
+      address: composeAddress(addressParts) || form.address,
+      cep: form.cep ? formatCep(form.cep) : form.cep,
       logradouro: form.logradouro,
       numero: form.numero,
       complemento: form.complemento,
@@ -82,8 +201,7 @@ function ClientesPageContent() {
     } else {
       addClient(payload);
     }
-    setShowForm(false);
-    setForm({});
+    closeForm();
   };
 
   const handleDelete = (id: string) => {
@@ -217,7 +335,7 @@ function ClientesPageContent() {
         )}
       </div>
 
-      <Modal open={showForm} onClose={() => { setShowForm(false); setForm({}); }} className="p-6 max-h-[90vh] overflow-y-auto">
+      <Modal open={showForm} onClose={closeForm} className="p-6 max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-semibold text-home-light mb-5">
           {editing ? "Editar cliente" : "Novo cliente"}
         </h2>
@@ -292,17 +410,36 @@ function ClientesPageContent() {
           </div>
           <div className="border-t border-home-gray/30 pt-4 mt-4">
             <h3 className="text-sm font-semibold text-home-light mb-3">Endereço</h3>
+            <p className="text-xs text-home-muted mb-3">
+              Digite o CEP para preencher logradouro, bairro, cidade e UF automaticamente.
+            </p>
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs text-home-muted mb-1">CEP</label>
-                  <input
-                    type="text"
-                    value={form.cep ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, cep: e.target.value }))}
-                    className="input-field"
-                    placeholder="00000-000"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      value={form.cep ?? ""}
+                      onChange={(e) => handleCepChange(e.target.value)}
+                      onBlur={() => {
+                        if (isValidCep(form.cep ?? "")) void lookupCep(form.cep ?? "");
+                      }}
+                      className="input-field pr-10"
+                      placeholder="00000-000"
+                      maxLength={9}
+                      aria-busy={cepLoading}
+                      aria-invalid={Boolean(cepError)}
+                    />
+                    {cepLoading && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-home-muted animate-spin" />
+                    )}
+                  </div>
+                  {cepError && (
+                    <p className="text-xs text-amber-400 mt-1">{cepError}</p>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs text-home-muted mb-1">Logradouro</label>
@@ -312,6 +449,7 @@ function ClientesPageContent() {
                     onChange={(e) => setForm((f) => ({ ...f, logradouro: e.target.value }))}
                     className="input-field"
                     placeholder="Rua, avenida..."
+                    disabled={cepLoading}
                   />
                 </div>
               </div>
@@ -319,6 +457,7 @@ function ClientesPageContent() {
                 <div>
                   <label className="block text-xs text-home-muted mb-1">Número</label>
                   <input
+                    ref={numeroRef}
                     type="text"
                     value={form.numero ?? ""}
                     onChange={(e) => setForm((f) => ({ ...f, numero: e.target.value }))}
@@ -344,6 +483,7 @@ function ClientesPageContent() {
                     onChange={(e) => setForm((f) => ({ ...f, bairro: e.target.value }))}
                     className="input-field"
                     placeholder="Bairro"
+                    disabled={cepLoading}
                   />
                 </div>
               </div>
@@ -356,6 +496,7 @@ function ClientesPageContent() {
                     onChange={(e) => setForm((f) => ({ ...f, cidade: e.target.value }))}
                     className="input-field"
                     placeholder="Cidade"
+                    disabled={cepLoading}
                   />
                 </div>
                 <div>
@@ -367,18 +508,19 @@ function ClientesPageContent() {
                     onChange={(e) => setForm((f) => ({ ...f, uf: e.target.value.toUpperCase() }))}
                     className="input-field"
                     placeholder="UF"
+                    disabled={cepLoading}
                   />
                 </div>
               </div>
             </div>
           </div>
           <div className="flex gap-3 pt-3">
-            <button type="submit" className="btn-primary flex-1">
+            <button type="submit" className="btn-primary flex-1" disabled={cepLoading}>
               {editing ? "Salvar" : "Cadastrar"}
             </button>
             <button
               type="button"
-              onClick={() => { setShowForm(false); setForm({}); }}
+              onClick={closeForm}
               className="btn-secondary"
             >
               Cancelar
