@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { NeuralField } from "./NeuralField";
 
-const CONTACT_MAIL = "mailto:contato@devcode.com?subject=Contato%20Da'at%20Technologies";
+const CONTACT_MAIL = "mailto:contato@devcodebi.com?subject=Contato%20Da'at%20Technologies";
 
 type Props = {
   children: ReactNode;
@@ -37,7 +37,7 @@ export function SiteShell({ children, brandHref = "/" }: Props) {
 
       <footer className="footer">
         <span>© {new Date().getFullYear()} Da&apos;at Technologies</span>
-        <a href={CONTACT_MAIL}>contato@devcode.com</a>
+        <a href={CONTACT_MAIL}>contato@devcodebi.com</a>
       </footer>
     </div>
   );

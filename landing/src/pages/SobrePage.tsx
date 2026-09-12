@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { SiteShell } from "../components/SiteShell";
 
-const CONTACT_MAIL = "mailto:contato@devcode.com?subject=Sobre%20a%20Da'at%20Technologies";
+const CONTACT_MAIL = "mailto:contato@devcodebi.com?subject=Sobre%20a%20Da'at%20Technologies";
 
 export default function SobrePage() {
   const reduceMotion = useReducedMotion();

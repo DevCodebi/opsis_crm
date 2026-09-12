@@ -4,7 +4,7 @@ import { SiteShell } from "../components/SiteShell";
 import { CrmMock } from "../components/CrmMock";
 import { OPSIS_SCREENS } from "../data/opsisScreens";
 
-const CONTACT_MAIL = "mailto:contato@devcode.com?subject=Ópsis%20CRM%20—%20Da'at";
+const CONTACT_MAIL = "mailto:contato@devcodebi.com?subject=Ópsis%20CRM%20—%20Da'at";
 
 export default function OpsisPage() {
   const reduceMotion = useReducedMotion();
@@ -79,7 +79,7 @@ export default function OpsisPage() {
             <h2>Quer ver o Ópsis na sua ótica?</h2>
             <p>
               Fale com a Da&apos;at em{" "}
-              <a href={CONTACT_MAIL}>contato@devcode.com</a>.
+              <a href={CONTACT_MAIL}>contato@devcodebi.com</a>.
             </p>
             <a className="btn btn-primary" href={CONTACT_MAIL}>
               Fale Conosco

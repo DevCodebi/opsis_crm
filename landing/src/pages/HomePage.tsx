@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { SiteShell } from "../components/SiteShell";
 
-const CONTACT_MAIL = "mailto:contato@devcode.com?subject=Contato%20Da'at%20Technologies";
+const CONTACT_MAIL = "mailto:contato@devcodebi.com?subject=Contato%20Da'at%20Technologies";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 28 },
@@ -148,7 +148,7 @@ export default function HomePage() {
             <h2>Vamos conversar sobre o seu próximo projeto</h2>
             <p>
               Conte o desafio. Respondemos em{" "}
-              <a href={CONTACT_MAIL}>contato@devcode.com</a>.
+              <a href={CONTACT_MAIL}>contato@devcodebi.com</a>.
             </p>
             <a className="btn btn-primary" href={CONTACT_MAIL}>
               Fale Conosco

@@ -15,7 +15,7 @@ Documento para outra IA ou desenvolvedor assumir o site institucional sem depend
 
 **Posicionamento:** soluções em dados, automação e desenvolvimento de software.  
 **Produto em destaque:** Ópsis CRM (gestão de óticas).  
-**CTA de contato:** `mailto:contato@devcode.com`
+**CTA de contato:** `mailto:contato@devcodebi.com`
 
 ## Stack
 
@@ -125,11 +125,11 @@ Drops não reclamados expiram (~1h) e podem pedir senha temporária (`My-Drop-Si
 1. Merge do PR #10 em `main` e Production branch = `main` no Netlify da landing
 2. Domínio próprio da Da'at (opcional) no site da landing
 3. Trocar mockups do Ópsis por screenshots reais das telas logadas, se disponíveis
-4. Confirmar e-mail de contato oficial (`contato@devcode.com`)
+4. ~~Confirmar e-mail de contato oficial~~ — confirmado: `contato@devcodebi.com`
 
 ## Contato no código
 
-Buscar por `contato@devcode.com` e `mailto:` em:
+Buscar por `contato@devcodebi.com` e `mailto:` em:
 
 - `src/components/SiteShell.tsx`
 - `src/pages/HomePage.tsx`

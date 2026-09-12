@@ -45,4 +45,4 @@ Drops não reclamados expiram (~1h) e podem exigir a senha temporária `My-Drop-
 
 ## Contato
 
-CTA **Fale Conosco** → `mailto:contato@devcode.com`
+CTA **Fale Conosco** → `mailto:contato@devcodebi.com`
