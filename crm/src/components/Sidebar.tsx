@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ROLES_CADASTRO, ROLES_GESTAO, ROLES_USUARIOS, ROLES_VENDAS } from "@/lib/access";
+import { STORE_LOGO_SRC, STORE_NAME, PRODUCT_TAGLINE } from "@/lib/branding";
 import type { UserRole } from "@/types";
 
 const nav: { href: string; label: string; icon: typeof LayoutDashboard; roles: UserRole[] }[] = [
@@ -81,17 +82,15 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
         >
           <Link
             href="/"
-            className={`flex items-center gap-3 group min-w-0 ${collapsed ? "md:justify-center" : ""}`}
+            className="flex flex-col items-center gap-1 group min-w-0 shrink-0"
             onClick={onClose}
-            title="Home Ótica"
+            title={STORE_NAME}
           >
-            <div className="w-10 h-10 rounded-xl bg-[#344B6F] flex items-center justify-center text-white font-semibold text-sm shadow-lg shadow-[#344B6F]/30 shrink-0">
-              HO
-            </div>
-            <div className={`flex flex-col leading-tight min-w-0 ${collapsed ? "md:hidden" : ""}`}>
-              <span className="text-[#344B6F] font-semibold text-base truncate">Home Ótica</span>
-              <span className="text-[#9ca3af] text-[11px]">by Ópsis CRM</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element -- logo estática pequena, sem necessidade de otimização do next/image */}
+            <img src={STORE_LOGO_SRC} alt={STORE_NAME} width={40} height={40} className="rounded-xl shrink-0" />
+            <span className={`text-[#9ca3af] text-[10px] whitespace-nowrap ${collapsed ? "md:hidden" : ""}`}>
+              {PRODUCT_TAGLINE}
+            </span>
           </Link>
 
           <div className="flex items-center gap-1 shrink-0">
