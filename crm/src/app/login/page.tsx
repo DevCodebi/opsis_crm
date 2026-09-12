@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { LogIn, Eye, EyeOff } from "lucide-react";
+import { PRODUCT_LOGO_SRC, PRODUCT_NAME } from "@/lib/branding";
 
 export default function LoginPage() {
   const { login, initialized, requestPasswordReset } = useStore();
@@ -68,14 +69,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1A1D25] p-4">
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[#344B6F] flex items-center justify-center text-white font-semibold text-lg shadow-lg shadow-[#344B6F]/30">
-            HO
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-[#344B6F] font-semibold text-xl">Home Ótica</span>
-            <span className="text-[#9ca3af] text-xs">by Ópsis CRM</span>
-          </div>
+        <div className="flex items-center justify-center mb-8">
+          {/* eslint-disable-next-line @next/next/no-img-element -- logo estática pequena, sem necessidade de otimização do next/image */}
+          <img src={PRODUCT_LOGO_SRC} alt={PRODUCT_NAME} width={260} height={87} />
         </div>
         <div className="card p-8 border border-[rgba(93,112,139,0.25)] rounded-2xl shadow-xl">
           {!modoRecuperar ? (
