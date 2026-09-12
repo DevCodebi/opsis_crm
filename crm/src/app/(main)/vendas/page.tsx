@@ -784,7 +784,7 @@ export default function VendasPage() {
                     <Truck className="w-3.5 h-3.5" />
                     Data prevista de entrega
                   </span>
-                  <p>{viewing.expectedDeliveryDate ? format(new Date(viewing.expectedDeliveryDate), "dd/MM/yyyy", { locale: ptBR }) : "—"}</p>
+                  <p>{viewing.expectedDeliveryDate ? format(parseISO(viewing.expectedDeliveryDate), "dd/MM/yyyy", { locale: ptBR }) : "—"}</p>
                 </div>
               </div>
 
@@ -993,7 +993,7 @@ export default function VendasPage() {
                         const client = clients.find((c) => c.id === p.clientId);
                         return (
                           <option key={p.id} value={p.id}>
-                            {client?.name ?? "Cliente"} — {format(new Date(p.date), "dd/MM/yyyy")} (Dr. {p.doctorName})
+                            {client?.name ?? "Cliente"} — {format(parseISO(p.date), "dd/MM/yyyy")} (Dr. {p.doctorName})
                           </option>
                         );
                       })}
