@@ -10,8 +10,8 @@ Documento para outra IA ou desenvolvedor assumir o site institucional sem depend
 | Repo | `DevCodebi/opsis_crm` |
 | Pasta do site | `landing/` (raiz do monorepo) |
 | App do CRM (separado) | `crm/` (Next.js — **não** misturar deploys) |
-| Branch de trabalho | `cursor/landing-daat-technologies-4c02` |
-| PR | #10 |
+| Branch de trabalho | `cursor/landing-daat-technologies-4c02` (mesclada, remota ainda existe mas está obsoleta) |
+| PR | #10 (mesclado em `main`, merge `fe77ade`) |
 
 **Posicionamento:** soluções em dados, automação e desenvolvimento de software.  
 **Produto em destaque:** Ópsis CRM (gestão de óticas).  
@@ -122,9 +122,9 @@ Drops não reclamados expiram (~1h) e podem pedir senha temporária (`My-Drop-Si
 
 ## Próximos passos sugeridos
 
-1. Merge do PR #10 em `main` e Production branch = `main` no Netlify da landing
-2. Domínio próprio da Da'at (opcional) no site da landing
-3. Trocar mockups do Ópsis por screenshots reais das telas logadas, se disponíveis
+1. ~~Merge do PR #10 em `main` e Production branch = `main` no Netlify da landing~~ — feito: PR #10 mesclado (merge `fe77ade`), Netlify do projeto `daattechnologies` já reconfigurado para production branch `main` e deploy confirmado no ar.
+2. Apontar o domínio próprio `daattechnologies.com.br` (já adquirido) no site da landing (Netlify Domain management + DNS Hostinger) — pendente.
+3. Trocar mockups do Ópsis por screenshots reais das telas logadas, se disponíveis.
 4. ~~Confirmar e-mail de contato oficial~~ — confirmado: `contato@devcodebi.com`
 
 ## Contato no código
