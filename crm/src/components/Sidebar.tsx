@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ROLES_CADASTRO, ROLES_GESTAO, ROLES_USUARIOS, ROLES_VENDAS } from "@/lib/access";
-import { STORE_LOGO_SRC, STORE_NAME, PRODUCT_TAGLINE } from "@/lib/branding";
+import { STORE_LOGO_SRC, STORE_NAME } from "@/lib/branding";
 import type { UserRole } from "@/types";
 
 const nav: { href: string; label: string; icon: typeof LayoutDashboard; roles: UserRole[] }[] = [
@@ -87,28 +87,24 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
         </button>
 
         <div
-          className={`border-b border-[rgba(93,112,139,0.2)] flex items-center p-4 md:p-5 ${
-            collapsed ? "md:justify-center" : "justify-between"
+          className={`relative border-b border-[rgba(93,112,139,0.2)] flex items-center justify-center p-4 ${
+            collapsed ? "md:p-3" : "md:p-5"
           }`}
         >
-          <Link
-            href="/"
-            className="flex flex-col items-center gap-1 min-w-0 shrink-0"
-            onClick={onClose}
-            title={STORE_NAME}
-          >
+          <Link href="/" className="flex items-center justify-center min-w-0" onClick={onClose} title={STORE_NAME}>
             {/* eslint-disable-next-line @next/next/no-img-element -- logo estática pequena, sem necessidade de otimização do next/image */}
-            <img src={STORE_LOGO_SRC} alt={STORE_NAME} width={40} height={40} className="rounded-xl shrink-0" />
-            <span className={`text-[#9ca3af] text-[10px] whitespace-nowrap ${collapsed ? "md:hidden" : ""}`}>
-              {PRODUCT_TAGLINE}
-            </span>
+            <img
+              src={STORE_LOGO_SRC}
+              alt={STORE_NAME}
+              className={`rounded-xl shrink-0 transition-all duration-300 w-16 h-16 ${collapsed ? "md:w-9 md:h-9" : ""}`}
+            />
           </Link>
 
           {/* Fechar — mobile */}
           <button
             type="button"
             onClick={onClose}
-            className="md:hidden p-2.5 -mr-1 rounded-xl text-[#9ca3af] hover:text-[#EAEAEA] hover:bg-[rgba(93,112,139,0.15)] transition-colors shrink-0"
+            className="md:hidden absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-xl text-[#9ca3af] hover:text-[#EAEAEA] hover:bg-[rgba(93,112,139,0.15)] transition-colors"
             aria-label="Fechar menu"
           >
             <X className="w-5 h-5" />

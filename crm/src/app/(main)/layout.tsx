@@ -65,7 +65,7 @@ export default function MainLayout({
         onToggleCollapse={toggleCollapse}
       />
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
-        <Header onMenuClick={openMenu} onToggleSidebar={toggleCollapse} sidebarCollapsed={collapsed} />
+        <Header onMenuClick={openMenu} />
         <main className="flex-1 p-4 sm:p-6 overflow-auto animate-fade-in bg-[#1A1D25]">
           {children}
         </main>
