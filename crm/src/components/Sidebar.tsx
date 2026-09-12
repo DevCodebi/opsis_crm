@@ -96,7 +96,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
             <img
               src={STORE_LOGO_SRC}
               alt={STORE_NAME}
-              className={`rounded-xl shrink-0 transition-all duration-300 w-16 h-16 ${collapsed ? "md:w-9 md:h-9" : ""}`}
+              className={`rounded-xl shrink-0 transition-all duration-300 w-[74px] h-[74px] ${collapsed ? "md:w-9 md:h-9" : ""}`}
             />
           </Link>
 
