@@ -11,12 +11,12 @@ import {
   ShoppingCart,
   UserCog,
   X,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ROLES_CADASTRO, ROLES_GESTAO, ROLES_USUARIOS, ROLES_VENDAS } from "@/lib/access";
-import { STORE_LOGO_SRC, STORE_NAME, PRODUCT_TAGLINE } from "@/lib/branding";
+import { STORE_LOGO_SRC, STORE_NAME } from "@/lib/branding";
 import type { UserRole } from "@/types";
 
 const nav: { href: string; label: string; icon: typeof LayoutDashboard; roles: UserRole[] }[] = [
@@ -70,51 +70,45 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapse }: SidebarP
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#1e2430] border-r border-[rgba(93,112,139,0.2)] transform transition-all duration-300 ease-out md:static md:z-auto md:translate-x-0 md:min-h-screen ${
+        className={`group fixed inset-y-0 left-0 z-50 flex flex-col bg-[#1e2430] border-r border-[rgba(93,112,139,0.2)] transform transition-all duration-300 ease-out md:static md:z-auto md:translate-x-0 md:min-h-screen ${
           open ? "translate-x-0" : "-translate-x-full"
         } w-64 max-w-[85vw] ${collapsed ? "md:w-[4.5rem]" : "md:w-56"} md:max-w-none`}
         aria-label="Menu principal"
       >
-        <div
-          className={`border-b border-[rgba(93,112,139,0.2)] flex items-center gap-2 ${
-            collapsed ? "md:flex-col md:p-3 md:gap-3" : "p-4 md:p-5 justify-between"
-          } p-4`}
+        {/* Handle de recolher/expandir — desktop, grudado na borda, some até passar o mouse na sidebar */}
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="hidden md:flex absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-6 h-12 items-center justify-center rounded-full bg-[#1e2430] border border-[rgba(93,112,139,0.3)] text-[#9ca3af] opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-[#EAEAEA] hover:border-[rgba(93,112,139,0.5)] shadow-lg transition-all duration-200"
+          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+          title={collapsed ? "Expandir menu" : "Recolher menu"}
         >
-          <Link
-            href="/"
-            className="flex flex-col items-center gap-1 group min-w-0 shrink-0"
-            onClick={onClose}
-            title={STORE_NAME}
-          >
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+        </button>
+
+        <div
+          className={`relative border-b border-[rgba(93,112,139,0.2)] flex items-center justify-center p-4 ${
+            collapsed ? "md:p-3" : "md:p-5"
+          }`}
+        >
+          <Link href="/" className="flex items-center justify-center min-w-0" onClick={onClose} title={STORE_NAME}>
             {/* eslint-disable-next-line @next/next/no-img-element -- logo estática pequena, sem necessidade de otimização do next/image */}
-            <img src={STORE_LOGO_SRC} alt={STORE_NAME} width={40} height={40} className="rounded-xl shrink-0" />
-            <span className={`text-[#9ca3af] text-[10px] whitespace-nowrap ${collapsed ? "md:hidden" : ""}`}>
-              {PRODUCT_TAGLINE}
-            </span>
+            <img
+              src={STORE_LOGO_SRC}
+              alt={STORE_NAME}
+              className={`rounded-xl shrink-0 transition-all duration-300 w-[74px] h-[74px] ${collapsed ? "md:w-9 md:h-9" : ""}`}
+            />
           </Link>
 
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Recolher / expandir — desktop */}
-            <button
-              type="button"
-              onClick={onToggleCollapse}
-              className="hidden md:inline-flex p-2.5 rounded-xl text-[#9ca3af] hover:text-[#EAEAEA] hover:bg-[rgba(93,112,139,0.15)] transition-colors"
-              aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-              title={collapsed ? "Expandir menu" : "Recolher menu"}
-            >
-              {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
-            </button>
-
-            {/* Fechar — mobile */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="md:hidden p-2.5 -mr-1 rounded-xl text-[#9ca3af] hover:text-[#EAEAEA] hover:bg-[rgba(93,112,139,0.15)] transition-colors"
-              aria-label="Fechar menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          {/* Fechar — mobile */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="md:hidden absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-xl text-[#9ca3af] hover:text-[#EAEAEA] hover:bg-[rgba(93,112,139,0.15)] transition-colors"
+            aria-label="Fechar menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className={`flex-1 overflow-y-auto space-y-0.5 ${collapsed ? "md:p-2" : "p-3"} p-3`}>
