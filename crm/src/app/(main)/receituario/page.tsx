@@ -7,7 +7,7 @@ import { Plus, Pencil, Trash2, Search, FileText, Eye } from "lucide-react";
 import { ModalLarge } from "@/components/Modal";
 import { RequireRole } from "@/components/RequireRole";
 import { ROLES_CADASTRO, isGerenteOrAdmin } from "@/lib/access";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const emptyEye: EyePrescription = {};
@@ -186,7 +186,7 @@ function ReceituarioPageContent() {
               <div className="min-w-0">
                 <p className="text-home-light font-medium truncate">{getClientName(p.clientId)}</p>
                 <p className="text-home-muted text-sm mt-0.5 truncate">
-                  {p.doctorName} · {format(new Date(p.date), "dd/MM/yyyy", { locale: ptBR })}
+                  {p.doctorName} · {format(parseISO(p.date), "dd/MM/yyyy", { locale: ptBR })}
                 </p>
                 <p className="text-home-muted text-xs mt-2 leading-relaxed">
                   OD:{" "}
@@ -263,7 +263,7 @@ function ReceituarioPageContent() {
                   <td className="py-3.5 px-5 text-home-light">{getClientName(p.clientId)}</td>
                   <td className="py-3.5 px-5 text-home-muted">{p.doctorName}</td>
                   <td className="py-3.5 px-5 text-home-muted">
-                    {format(new Date(p.date), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(parseISO(p.date), "dd/MM/yyyy", { locale: ptBR })}
                   </td>
                   <td className="py-3.5 px-5 text-home-muted text-sm">
                     {[p.od.sph, p.od.cyl, p.od.axis, p.od.add].filter(Boolean).length
@@ -332,7 +332,7 @@ function ReceituarioPageContent() {
                 </div>
                 <div>
                   <span className="text-home-muted text-sm block mb-0.5">Data da receita</span>
-                  <p>{format(new Date(viewing.date), "dd/MM/yyyy", { locale: ptBR })}</p>
+                  <p>{format(parseISO(viewing.date), "dd/MM/yyyy", { locale: ptBR })}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

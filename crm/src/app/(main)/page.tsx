@@ -104,7 +104,7 @@ export default function DashboardPage() {
     const mes = now.getMonth();
     return clients.filter((c) => {
       if (!c.birthDate) return false;
-      const d = new Date(c.birthDate);
+      const d = parseISO(c.birthDate);
       return d.getMonth() === mes;
     });
   }, [clients]);
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                 >
                   <span className="text-[#EAEAEA] text-sm">{c.name}</span>
                   <span className="text-[#9ca3af] text-xs">
-                    {c.birthDate ? format(new Date(c.birthDate), "dd/MM", { locale: ptBR }) : ""}
+                    {c.birthDate ? format(parseISO(c.birthDate), "dd/MM", { locale: ptBR }) : ""}
                   </span>
                 </div>
               ))

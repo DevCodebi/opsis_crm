@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { parseISO } from "date-fns";
 import { useStore } from "@/lib/store";
 import type { Client } from "@/types";
 import { Loader2, Plus, Pencil, Trash2, Search } from "lucide-react";
@@ -242,7 +243,7 @@ function ClientesPageContent() {
                 <p className="text-home-muted text-sm mt-0.5">{c.phone}</p>
                 <p className="text-home-muted text-sm truncate">{c.email || "—"}</p>
                 <p className="text-home-muted text-xs mt-1">
-                  {c.birthDate ? new Date(c.birthDate).toLocaleDateString("pt-BR") : "—"}
+                  {c.birthDate ? parseISO(c.birthDate).toLocaleDateString("pt-BR") : "—"}
                   {" · "}
                   {c.sex === "M" ? "Masculino" : c.sex === "F" ? "Feminino" : c.sex === "Outro" ? "Outro" : "—"}
                 </p>
@@ -302,7 +303,7 @@ function ClientesPageContent() {
                   <td className="py-3.5 px-5 text-home-muted">{c.email || "—"}</td>
                   <td className="py-3.5 px-5 text-home-muted">{c.phone}</td>
                   <td className="py-3.5 px-5 text-home-muted">
-                    {c.birthDate ? new Date(c.birthDate).toLocaleDateString("pt-BR") : "—"}
+                    {c.birthDate ? parseISO(c.birthDate).toLocaleDateString("pt-BR") : "—"}
                   </td>
                   <td className="py-3.5 px-5 text-home-muted">{c.sex === "M" ? "Masculino" : c.sex === "F" ? "Feminino" : c.sex === "Outro" ? "Outro" : "—"}</td>
                   <td className="py-3.5 px-5 text-right">

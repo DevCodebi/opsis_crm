@@ -211,8 +211,8 @@ export async function exportSaleReceiptToPdf(sale: Sale, prescription?: Prescrip
   doc.setFontSize(10);
   doc.text("Produto", marginX, y);
   doc.text("Qtd", 320, y);
-  doc.text("Preço", 380, y);
-  doc.text("Total", 460, y, { align: "right" });
+  doc.text("Preço", 460, y, { align: "right" });
+  doc.text("Total", pageWidth - marginX, y, { align: "right" });
   y += 6;
   doc.setDrawColor(220);
   doc.line(marginX, y, pageWidth - marginX, y);
@@ -221,8 +221,8 @@ export async function exportSaleReceiptToPdf(sale: Sale, prescription?: Prescrip
   for (const it of sale.items) {
     doc.text(it.productName, marginX, y, { maxWidth: 260 });
     doc.text(String(it.quantity), 320, y);
-    doc.text(fmtMoney(it.unitPrice), 380, y);
-    doc.text(fmtMoney(it.total), 460, y, { align: "right" });
+    doc.text(fmtMoney(it.unitPrice), 460, y, { align: "right" });
+    doc.text(fmtMoney(it.total), pageWidth - marginX, y, { align: "right" });
     y += 16;
   }
 

@@ -1,5 +1,5 @@
 import type { EyePrescription, Prescription } from "@/types";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { FileText } from "lucide-react";
 
@@ -47,7 +47,7 @@ export function PrescriptionSummary({
           Receituário de {clientName}
         </div>
         <p className="text-xs text-home-muted">
-          {format(new Date(prescription.date), "dd/MM/yyyy", { locale: ptBR })} · {prescription.doctorName}
+          {format(parseISO(prescription.date), "dd/MM/yyyy", { locale: ptBR })} · {prescription.doctorName}
           {prescription.doctorCrm ? ` (CRM ${prescription.doctorCrm})` : ""}
         </p>
       </div>
