@@ -21,7 +21,7 @@ export default function OpsisPage() {
           </p>
           <div className="cta-row opsis-hero-cta">
             <a className="btn btn-primary" href={CONTACT_MAIL}>
-              Fale Conosco
+              Falar sobre o Ópsis
             </a>
             <Link className="btn btn-ghost" to="/">
               Voltar à home
@@ -78,11 +78,12 @@ export default function OpsisPage() {
           <div className="contact-panel">
             <h2>Quer ver o Ópsis na sua ótica?</h2>
             <p>
-              Fale com a Da&apos;at em{" "}
-              <a href={CONTACT_MAIL}>contato@devcodebi.com</a>.
+              Escreva para{" "}
+              <a href={CONTACT_MAIL}>contato@devcodebi.com</a> e conte como
+              sua ótica trabalha hoje.
             </p>
             <a className="btn btn-primary" href={CONTACT_MAIL}>
-              Fale Conosco
+              Quero o Ópsis na minha ótica
             </a>
           </div>
         </section>

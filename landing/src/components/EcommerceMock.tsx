@@ -38,7 +38,7 @@ export function EcommerceMock() {
         <span />
         <span />
         <span />
-        <em>loja-exemplo.com.br · ilustrativo</em>
+        <em>loja-exemplo.com.br · exemplo ilustrativo</em>
       </div>
       <div className="ecom-body">
         <div className="ecom-top">

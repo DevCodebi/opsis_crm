@@ -22,31 +22,34 @@ const SOLUTIONS: Solution[] = [
     id: "landing-pages",
     title: "Landing Pages",
     pain: "Sua empresa ainda não tem uma página que passe credibilidade no primeiro contato com o cliente.",
-    example: "Ex.: este mesmo site — planejado, escrito e publicado pela Da'at.",
+    example:
+      "Este site é nosso próprio trabalho, projetado e publicado pela Da'at. Abaixo, um exemplo ilustrativo para uma loja de moda.",
     mailSubject: "Landing%20Page%20—%20Da'at",
     ctaLabel: "Quero uma landing page",
   },
   {
     id: "automacoes",
     title: "Automações",
-    pain: "Tarefas manuais e repetitivas tomando tempo da equipe todos os dias.",
-    example: "Ex.: integração entre planilhas, sistemas e avisos automáticos por e-mail.",
+    pain: "Sua equipe perde tempo todos os dias repetindo tarefas manuais que dava para automatizar.",
+    example:
+      "Abaixo, um exemplo ilustrativo: uma planilha alimentando um processo que dispara e-mails sozinho.",
     mailSubject: "Automação%20—%20Da'at",
     ctaLabel: "Quero automatizar um processo",
   },
   {
     id: "dados",
     title: "Análise de Dados",
-    pain: "Decisões tomadas no feeling, sem clareza sobre o que os números realmente mostram.",
-    example: "Ex.: dashboards de vendas e desempenho, como o do Ópsis CRM.",
+    pain: "Você decide no feeling porque os números que tem hoje não mostram o que realmente importa.",
+    example:
+      "Abaixo, exemplos ilustrativos em três setores diferentes — o mesmo tipo de painel que já roda no Ópsis CRM.",
     mailSubject: "Análise%20de%20Dados%20—%20Da'at",
     ctaLabel: "Quero organizar meus dados",
   },
   {
     id: "webapps",
     title: "Webapps para Empresas",
-    pain: "Sistema pronto no mercado que não encaixa no jeito que sua empresa trabalha.",
-    example: "Ex.: o Ópsis CRM, sistema sob medida para gestão de óticas.",
+    pain: "Sua empresa usa um sistema pronto do mercado que não encaixa no jeito que ela trabalha.",
+    example: "O Ópsis CRM é um exemplo direto: sistema sob medida para gestão de óticas.",
     mailSubject: "Webapp%20sob%20medida%20—%20Da'at",
     ctaLabel: "Quero um sistema sob medida",
     exampleLink: { to: "/opsis", label: "Veja um exemplo real" },
@@ -74,13 +77,13 @@ export default function HomePage() {
             Landing pages, automações, dados e sistemas sob medida.
           </motion.h1>
           <motion.p className="lede" {...(reduceMotion ? {} : fadeUp(0.22))}>
-            Criamos soluções digitais completas — do primeiro contato com o
-            cliente ao sistema que roda a operação — com foco em clareza,
-            escala e resultado.
+            Da primeira página que o seu cliente vê ao sistema que roda a
+            operação por trás dela — projetamos, automatizamos e construímos
+            sob medida, peça por peça.
           </motion.p>
           <motion.div className="cta-row" {...(reduceMotion ? {} : fadeUp(0.32))}>
             <a className="btn btn-primary" href={CONTACT_MAIL}>
-              Fale Conosco
+              Conversar com a Da&apos;at
             </a>
             <Link className="btn btn-ghost" to="/opsis">
               Ver produto
@@ -99,8 +102,8 @@ export default function HomePage() {
             <p className="eyebrow">Soluções</p>
             <h2>O que construímos para o seu negócio</h2>
             <p className="section-copy">
-              Quatro frentes que cobrem da primeira página até o sistema que
-              roda a sua operação no dia a dia.
+              Da página que ainda falta ao sistema que já devia ter
+              substituído a planilha — veja onde a Da&apos;at entra.
             </p>
           </motion.div>
 
@@ -177,8 +180,7 @@ export default function HomePage() {
             <h2>Ópsis CRM</h2>
             <p className="section-copy">
               Um exemplo do que construímos sob encomenda: sistema web
-              completo de gestão para óticas — do balcão à retaguarda,
-              feito sob medida para a operação do cliente.
+              completo de gestão para óticas, do balcão à retaguarda.
             </p>
           </motion.div>
 
@@ -217,7 +219,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="product-copy">
-              <p className="proof-badge">Em produção na Home Ótica</p>
+              <p className="proof-badge">Já em uso na Home Ótica</p>
               <h3>Gestão completa para o balcão e a retaguarda</h3>
               <p>
                 O Ópsis CRM concentra o dia a dia da ótica: cadastro de
@@ -243,23 +245,22 @@ export default function HomePage() {
             <p className="eyebrow">Sobre a Da&apos;at</p>
             <h2>Soluções em dados, automações e softwares</h2>
             <p className="section-copy">
-              Unimos engenharia de software e inteligência de dados
-              para construir produtos e automações que reduzem
-              fricção operacional e aceleram decisões — do fluxo
-              interno ao produto entregue ao cliente.
+              Juntamos desenvolvimento de software e trabalho com dados numa
+              coisa só: menos tarefa manual, menos número perdido em
+              planilha solta, e decisões que saem mais rápido.
             </p>
             <ul className="pillars">
               <li>
                 <strong>Dados</strong>
-                <span>Modelagem, integração e visão acionável</span>
+                <span>Números organizados para decisão, não só para relatório</span>
               </li>
               <li>
                 <strong>Automações</strong>
-                <span>Processos repetíveis com menos esforço manual</span>
+                <span>Tarefas repetitivas rodando sozinhas, sem depender de alguém lembrar</span>
               </li>
               <li>
                 <strong>Softwares</strong>
-                <span>Aplicações web sob medida para o negócio</span>
+                <span>Sistema web construído para o seu processo, não o contrário</span>
               </li>
             </ul>
           </motion.div>
@@ -275,11 +276,11 @@ export default function HomePage() {
           >
             <h2>Vamos conversar sobre o seu próximo projeto</h2>
             <p>
-              Conte o desafio. Respondemos em{" "}
+              Descreva o problema em poucas linhas — a gente responde em{" "}
               <a href={CONTACT_MAIL}>contato@devcodebi.com</a>.
             </p>
             <a className="btn btn-primary" href={CONTACT_MAIL}>
-              Fale Conosco
+              Começar a conversa
             </a>
           </motion.div>
         </section>

@@ -48,23 +48,22 @@ export default function SobrePage() {
           <h1>Sobre a Da&apos;at Technologies</h1>
           <div className="sobre-body">
             <p>
-              Somos uma empresa de tecnologia em atuação nas áreas de{" "}
+              Somos uma empresa de tecnologia que trabalha com{" "}
               <strong>dados, automação e desenvolvimento de software</strong>.
             </p>
             <p>
-              Entregamos soluções para negócios de diferentes portes e
-              segmentos — do operacional do dia a dia à visão estratégica —
-              com foco em clareza, escala e resultado.
+              Atendemos negócios de portes diferentes, de quem precisa de
+              uma primeira página bem-feita a quem já precisa de um sistema
+              inteiro rodando a operação.
             </p>
             <p>
-              Unimos engenharia e inteligência de dados para reduzir fricção,
-              automatizar processos e construir produtos digitais que
-              acompanham o crescimento da operação.
+              O critério é sempre o mesmo: entender o problema de verdade
+              antes de propor qualquer tela, automação ou linha de código.
             </p>
           </div>
           <div className="cta-row sobre-cta">
             <a className="btn btn-primary" href={CONTACT_MAIL}>
-              Fale Conosco
+              Conversar com a Da&apos;at
             </a>
             <Link className="btn btn-ghost" to="/">
               Voltar à home
