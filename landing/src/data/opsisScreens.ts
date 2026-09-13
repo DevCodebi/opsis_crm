@@ -22,6 +22,7 @@ export const OPSIS_SCREENS: OpsisScreen[] = [
     description:
       "Visão de faturamento, vendas, ticket médio, produtos em destaque e alertas de estoque.",
     visual: "dashboard",
+    image: "/screens/dashboard.png",
   },
   {
     id: "clientes",
