@@ -21,7 +21,7 @@ const SOLUTIONS: Solution[] = [
   {
     id: "landing-pages",
     title: "Landing Pages",
-    pain: "Sua empresa ainda não tem uma página que passe credibilidade no primeiro contato com o cliente.",
+    pain: "O primeiro contato com o cliente costuma ser uma página — e ela só passa credibilidade se for pensada pra isso.",
     example:
       "Este site é nosso próprio trabalho, projetado e publicado pela Da'at. Abaixo, um exemplo ilustrativo para uma loja de moda.",
     mailSubject: "Landing%20Page%20—%20Da'at",
@@ -30,7 +30,7 @@ const SOLUTIONS: Solution[] = [
   {
     id: "automacoes",
     title: "Automações",
-    pain: "Sua equipe perde tempo todos os dias repetindo tarefas manuais que dava para automatizar.",
+    pain: "Tarefas manuais repetidas todos os dias tomam um tempo que dava para automatizar.",
     example:
       "Abaixo, um exemplo ilustrativo: uma planilha alimentando um processo que dispara e-mails sozinho.",
     mailSubject: "Automação%20—%20Da'at",
@@ -39,7 +39,7 @@ const SOLUTIONS: Solution[] = [
   {
     id: "dados",
     title: "Análise de Dados",
-    pain: "Você decide no feeling porque os números que tem hoje não mostram o que realmente importa.",
+    pain: "Quando os números disponíveis não mostram o que realmente importa, a decisão acaba no feeling.",
     example:
       "Abaixo, exemplos ilustrativos em três setores diferentes — o mesmo tipo de painel que já roda no Ópsis CRM.",
     mailSubject: "Análise%20de%20Dados%20—%20Da'at",
@@ -48,7 +48,7 @@ const SOLUTIONS: Solution[] = [
   {
     id: "webapps",
     title: "Webapps para Empresas",
-    pain: "Sua empresa usa um sistema pronto do mercado que não encaixa no jeito que ela trabalha.",
+    pain: "Sistema pronto do mercado nem sempre encaixa no jeito que uma empresa trabalha.",
     example: "O Ópsis CRM é um exemplo direto: sistema sob medida para gestão de óticas.",
     mailSubject: "Webapp%20sob%20medida%20—%20Da'at",
     ctaLabel: "Quero um sistema sob medida",
