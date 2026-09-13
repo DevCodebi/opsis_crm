@@ -37,7 +37,10 @@ export function SiteShell({ children, brandHref = "/" }: Props) {
 
       <footer className="footer">
         <span>© {new Date().getFullYear()} Da&apos;at Technologies</span>
-        <a href={CONTACT_MAIL}>contato@devcodebi.com</a>
+        <div className="footer-links">
+          <Link to="/#solucoes">Soluções</Link>
+          <a href={CONTACT_MAIL}>contato@devcodebi.com</a>
+        </div>
       </footer>
     </div>
   );

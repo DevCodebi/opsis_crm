@@ -35,7 +35,10 @@ export function NeuralField() {
 
     const olive = { r: 197, g: 208, b: 168 };
     const linkDist = isMobile ? 110 : 150;
-    const count = reduceMotion ? (isMobile ? 18 : 28) : isMobile ? 36 : 58;
+    // Densidade moderadamente maior que a original (desktop 58→74, mobile 36→44)
+    // para dar mais "volume" sem dobrar o custo O(n²) de conexões por frame,
+    // que é o que mais pesa em canvas 2D (stroke por aresta, não só distância).
+    const count = reduceMotion ? (isMobile ? 22 : 34) : isMobile ? 44 : 74;
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);

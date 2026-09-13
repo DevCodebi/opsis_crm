@@ -4,6 +4,52 @@ import { SiteShell } from "../components/SiteShell";
 
 const CONTACT_MAIL = "mailto:contato@devcodebi.com?subject=Contato%20Da'at%20Technologies";
 
+type Solution = {
+  id: string;
+  title: string;
+  pain: string;
+  example: string;
+  mailSubject: string;
+  ctaLabel: string;
+  exampleLink?: { to: string; label: string };
+};
+
+const SOLUTIONS: Solution[] = [
+  {
+    id: "landing-pages",
+    title: "Landing Pages",
+    pain: "Sua empresa ainda não tem uma página que passe credibilidade no primeiro contato com o cliente.",
+    example: "Ex.: este mesmo site — planejado, escrito e publicado pela Da'at.",
+    mailSubject: "Landing%20Page%20—%20Da'at",
+    ctaLabel: "Quero uma landing page",
+  },
+  {
+    id: "automacoes",
+    title: "Automações",
+    pain: "Tarefas manuais e repetitivas tomando tempo da equipe todos os dias.",
+    example: "Ex.: integração entre planilhas, sistemas e avisos automáticos por e-mail.",
+    mailSubject: "Automação%20—%20Da'at",
+    ctaLabel: "Quero automatizar um processo",
+  },
+  {
+    id: "dados",
+    title: "Análise de Dados",
+    pain: "Decisões tomadas no feeling, sem clareza sobre o que os números realmente mostram.",
+    example: "Ex.: dashboards de vendas e desempenho, como o do Ópsis CRM.",
+    mailSubject: "Análise%20de%20Dados%20—%20Da'at",
+    ctaLabel: "Quero organizar meus dados",
+  },
+  {
+    id: "webapps",
+    title: "Webapps para Empresas",
+    pain: "Sistema pronto no mercado que não encaixa no jeito que sua empresa trabalha.",
+    example: "Ex.: o Ópsis CRM, sistema sob medida para gestão de óticas.",
+    mailSubject: "Webapp%20sob%20medida%20—%20Da'at",
+    ctaLabel: "Quero um sistema sob medida",
+    exampleLink: { to: "/opsis", label: "Veja um exemplo real" },
+  },
+];
+
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 28 },
   animate: { opacity: 1, y: 0 },
@@ -22,11 +68,12 @@ export default function HomePage() {
             <span className="brand-line">Technologies</span>
           </motion.p>
           <motion.h1 className="headline" {...(reduceMotion ? {} : fadeUp(0.12))}>
-            Dados, automações e software que fazem o negócio andar.
+            Landing pages, automações, dados e sistemas sob medida.
           </motion.h1>
           <motion.p className="lede" {...(reduceMotion ? {} : fadeUp(0.22))}>
-            Desenvolvemos soluções digitais para transformar informação
-            em operação — com foco em clareza, escala e resultado.
+            Criamos soluções digitais completas — do primeiro contato com o
+            cliente ao sistema que roda a operação — com foco em clareza,
+            escala e resultado.
           </motion.p>
           <motion.div className="cta-row" {...(reduceMotion ? {} : fadeUp(0.32))}>
             <a className="btn btn-primary" href={CONTACT_MAIL}>
@@ -38,6 +85,58 @@ export default function HomePage() {
           </motion.div>
         </section>
 
+        <section className="solutions" id="solucoes">
+          <motion.div
+            className="section-head"
+            initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <p className="eyebrow">Soluções</p>
+            <h2>O que construímos para o seu negócio</h2>
+            <p className="section-copy">
+              Quatro frentes que cobrem da primeira página até o sistema que
+              roda a sua operação no dia a dia.
+            </p>
+          </motion.div>
+
+          <div className="solutions-grid">
+            {SOLUTIONS.map((solution, index) => (
+              <motion.article
+                key={solution.id}
+                className="solution-card"
+                initial={reduceMotion ? false : { opacity: 0, y: 26 }}
+                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{
+                  duration: 0.55,
+                  ease: [0.22, 1, 0.36, 1],
+                  delay: reduceMotion ? 0 : Math.min(index * 0.06, 0.24),
+                }}
+              >
+                <p className="eyebrow">{String(index + 1).padStart(2, "0")}</p>
+                <h3>{solution.title}</h3>
+                <p className="solution-pain">{solution.pain}</p>
+                <p className="solution-example">{solution.example}</p>
+                {solution.exampleLink && (
+                  <Link className="text-link solution-link" to={solution.exampleLink.to}>
+                    {solution.exampleLink.label}
+                    <span aria-hidden="true"> →</span>
+                  </Link>
+                )}
+                <a
+                  className="text-link solution-cta"
+                  href={`mailto:contato@devcodebi.com?subject=${solution.mailSubject}`}
+                >
+                  {solution.ctaLabel}
+                  <span aria-hidden="true"> →</span>
+                </a>
+              </motion.article>
+            ))}
+          </div>
+        </section>
+
         <section className="product" id="produto">
           <motion.div
             className="section-head"
@@ -46,12 +145,12 @@ export default function HomePage() {
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           >
-            <p className="eyebrow">Produto</p>
+            <p className="eyebrow">Exemplo real</p>
             <h2>Ópsis CRM</h2>
             <p className="section-copy">
-              Sistema web para gestão de óticas: clientes, produtos,
-              receituário, vendas e equipe — com dashboard e controle
-              por papéis em um só lugar.
+              Um exemplo do que construímos sob encomenda: sistema web
+              completo de gestão para óticas — do balcão à retaguarda,
+              feito sob medida para a operação do cliente.
             </p>
           </motion.div>
 
@@ -90,6 +189,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="product-copy">
+              <p className="proof-badge">Em produção na Home Ótica</p>
               <h3>Gestão completa para o balcão e a retaguarda</h3>
               <p>
                 O Ópsis CRM concentra o dia a dia da ótica: cadastro de
