@@ -392,6 +392,15 @@ main,
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
+  align-items: start;
+}
+
+.solution-card--full {
+  grid-column: 1 / -1;
+}
+
+.solution-visual {
+  margin-top: 0.5rem;
 }
 
 .solution-card {
@@ -527,6 +536,7 @@ main,
 
 .screen-bar {
   display: flex;
+  align-items: center;
   gap: 0.4rem;
   padding: 0.85rem 1rem;
   background: rgba(0, 0, 0, 0.28);
@@ -537,6 +547,16 @@ main,
   height: 0.55rem;
   border-radius: 50%;
   background: rgba(236, 232, 220, 0.28);
+}
+
+.screen-bar em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 0.7rem;
+  color: rgba(236, 232, 220, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .screen-body {
@@ -1100,6 +1120,270 @@ main,
 
   .opsis-hero-cta .btn {
     width: 100%;
+  }
+}
+
+/* —— Mini-dashboards ilustrativos (card "Análise de Dados") —— */
+.mini-dash-wrap {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mini-dash-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mini-dash-tab {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.mini-dash-tab:hover {
+  color: var(--ink);
+  border-color: rgba(163, 177, 138, 0.45);
+}
+
+.mini-dash-tab.is-active {
+  color: #12150e;
+  background: var(--olive-bright);
+  border-color: var(--olive-bright);
+}
+
+.mini-dash.screen {
+  transform: none;
+  color: #ece8dc;
+}
+
+.mini-dash-body {
+  padding: 1.1rem 1.25rem 1.4rem;
+  display: grid;
+  gap: 1.1rem;
+}
+
+.mini-dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.mini-dash-kpis small {
+  display: block;
+  opacity: 0.75;
+  font-size: 0.72rem;
+  margin-bottom: 0.2rem;
+}
+
+.mini-dash-kpis strong {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+}
+
+.mini-dash-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 84px;
+}
+
+.mini-dash-chart i {
+  flex: 1;
+  display: block;
+  border-radius: 0.35rem 0.35rem 0.1rem 0.1rem;
+}
+
+/* Paletas por área — única exceção intencional à paleta oliva da marca,
+   restrita ao interior dos mini-dashboards ilustrativos. */
+.mini-dash[data-area="vendas"] {
+  background: linear-gradient(160deg, #3a2e12, #241c0c 55%, #332710);
+}
+
+.mini-dash[data-area="vendas"] .mini-dash-kpis strong {
+  color: #e0a458;
+}
+
+.mini-dash[data-area="vendas"] .mini-dash-chart i {
+  background: linear-gradient(180deg, #e0a458, #8fbf6b);
+}
+
+.mini-dash[data-area="logistica"] {
+  background: linear-gradient(160deg, #16202c, #0f1620 55%, #16202c);
+}
+
+.mini-dash[data-area="logistica"] .mini-dash-kpis strong {
+  color: #4f8fe0;
+}
+
+.mini-dash[data-area="logistica"] .mini-dash-chart i {
+  background: linear-gradient(180deg, #4f8fe0, #e08a4f);
+}
+
+.mini-dash[data-area="saude"] {
+  background: linear-gradient(160deg, #10302c, #0b201d 55%, #123a34);
+}
+
+.mini-dash[data-area="saude"] .mini-dash-kpis strong {
+  color: #4fd1c5;
+}
+
+.mini-dash[data-area="saude"] .mini-dash-chart i {
+  background: linear-gradient(180deg, #4fd1c5, #eafffb);
+}
+
+@media (max-width: 480px) {
+  .mini-dash-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* —— Loop de automação (card "Automações") —— */
+.automation-loop {
+  padding: 1.1rem 0.5rem 0.4rem;
+}
+
+.automation-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.automation-node {
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  color: var(--olive-bright);
+  flex-shrink: 0;
+}
+
+.automation-node span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.automation-line {
+  position: relative;
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  min-width: 1.5rem;
+}
+
+.automation-dot {
+  position: absolute;
+  top: 50%;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--olive-bright);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px rgba(197, 208, 168, 0.8);
+}
+
+@media (max-width: 480px) {
+  .automation-node span {
+    display: none;
+  }
+}
+
+/* —— Mockup ilustrativo de e-commerce (card "Landing Pages") —— */
+.ecom-mock.screen {
+  transform: none;
+}
+
+.ecom-body {
+  padding: 1rem 1.15rem 1.3rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.ecom-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ecom-logo {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.ecom-tabs {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.ecom-tab {
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.ecom-tab:hover {
+  color: var(--ink);
+}
+
+.ecom-tab.is-active {
+  color: #12150e;
+  background: var(--olive-bright);
+  border-color: var(--olive-bright);
+}
+
+.ecom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+}
+
+.ecom-product {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.ecom-swatch {
+  aspect-ratio: 3 / 4;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.ecom-name {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  line-height: 1.3;
+}
+
+.ecom-price {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+@media (max-width: 480px) {
+  .ecom-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

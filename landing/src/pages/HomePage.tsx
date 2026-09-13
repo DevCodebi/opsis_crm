@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { SiteShell } from "../components/SiteShell";
+import { DataDashboards } from "../components/DataDashboards";
+import { AutomationLoop } from "../components/AutomationLoop";
+import { EcommerceMock } from "../components/EcommerceMock";
 
 const CONTACT_MAIL = "mailto:contato@devcodebi.com?subject=Contato%20Da'at%20Technologies";
 
@@ -105,7 +108,15 @@ export default function HomePage() {
             {SOLUTIONS.map((solution, index) => (
               <motion.article
                 key={solution.id}
-                className="solution-card"
+                className={[
+                  "solution-card",
+                  ["landing-pages", "automacoes", "dados"].includes(solution.id)
+                    ? "solution-card--visual"
+                    : "",
+                  solution.id === "dados" ? "solution-card--full" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 initial={reduceMotion ? false : { opacity: 0, y: 26 }}
                 whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
@@ -119,6 +130,23 @@ export default function HomePage() {
                 <h3>{solution.title}</h3>
                 <p className="solution-pain">{solution.pain}</p>
                 <p className="solution-example">{solution.example}</p>
+
+                {solution.id === "landing-pages" && (
+                  <div className="solution-visual">
+                    <EcommerceMock />
+                  </div>
+                )}
+                {solution.id === "automacoes" && (
+                  <div className="solution-visual">
+                    <AutomationLoop />
+                  </div>
+                )}
+                {solution.id === "dados" && (
+                  <div className="solution-visual">
+                    <DataDashboards />
+                  </div>
+                )}
+
                 {solution.exampleLink && (
                   <Link className="text-link solution-link" to={solution.exampleLink.to}>
                     {solution.exampleLink.label}
