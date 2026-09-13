@@ -129,7 +129,7 @@ export function EcommerceMock() {
           <span />
           <span />
           <span />
-          <em>{store.domain} · exemplo ilustrativo</em>
+          <em>{store.domain} · ilustrativo</em>
         </div>
 
         <div className="ecom-body">

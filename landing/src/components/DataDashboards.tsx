@@ -48,7 +48,7 @@ export function DataDashboards() {
           <span />
           <span />
           <span />
-          <em>{AREA_LABEL[active]} · exemplo ilustrativo</em>
+          <em>{AREA_LABEL[active]} · ilustrativo</em>
         </div>
         <div className="mini-dash-body">
           {active === "vendas" && <VendasPanel />}

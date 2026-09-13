@@ -176,7 +176,6 @@ export default function HomePage() {
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           >
-            <p className="eyebrow">Exemplo real</p>
             <h2>Ópsis CRM</h2>
             <p className="section-copy">
               Um exemplo do que construímos sob encomenda: sistema web
