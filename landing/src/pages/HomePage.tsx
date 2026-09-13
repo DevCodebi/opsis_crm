@@ -190,31 +190,20 @@ export default function HomePage() {
             viewport={{ once: true, amount: 0.35 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
           >
-            <div className="product-visual" aria-hidden="true">
-              <div className="screen">
+            <div className="product-visual">
+              <div className="screen product-screen">
                 <div className="screen-bar">
                   <span />
                   <span />
                   <span />
+                  <em>Ópsis CRM · dashboard real</em>
                 </div>
-                <div className="screen-body">
-                  <div className="metric">
-                    <small>Vendas do mês</small>
-                    <strong>R$ 48.2k</strong>
-                  </div>
-                  <div className="bars">
-                    <i style={{ height: "42%" }} />
-                    <i style={{ height: "68%" }} />
-                    <i style={{ height: "55%" }} />
-                    <i style={{ height: "86%" }} />
-                    <i style={{ height: "72%" }} />
-                  </div>
-                  <ul className="chips">
-                    <li>Clientes</li>
-                    <li>Receituário</li>
-                    <li>Estoque</li>
-                  </ul>
-                </div>
+                <img
+                  src="/screens/dashboard.png"
+                  alt="Dashboard do Ópsis CRM em produção, com receita, vendas, ticket médio e produtos mais vendidos"
+                  loading="lazy"
+                  className="product-screenshot"
+                />
               </div>
             </div>
             <div className="product-copy">

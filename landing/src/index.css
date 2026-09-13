@@ -521,7 +521,7 @@ main,
 }
 
 .product-visual {
-  min-height: 280px;
+  min-height: 200px;
 }
 
 .screen {
@@ -532,6 +532,18 @@ main,
   overflow: hidden;
   color: #ece8dc;
   transform: rotate(-1.2deg);
+}
+
+/* Screenshot real do dashboard: sem o tilt do mock ilustrativo — uma
+   captura de tela de verdade fica mais crível e legível "reta". */
+.product-screen {
+  transform: none;
+}
+
+.product-screenshot {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .screen-bar {
