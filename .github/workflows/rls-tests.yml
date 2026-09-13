@@ -1,0 +1,75 @@
+name: Testes de RLS (Ópsis CRM)
+
+# ============================================================================
+# GAP CONHECIDO / BLOQUEADOR (ver .claude/agents/rls-test-automation-agent.md):
+#
+# Este projeto hoje só tem UM projeto Supabase (produção — usado por
+# crm/.env.local, veja NEXT_PUBLIC_SUPABASE_URL). O script
+# crm/scripts/test-rls.mjs faz ESCRITA REAL (insert/update/delete) para
+# provar que as políticas de RLS funcionam, e por isso NUNCA deve rodar
+# contra produção.
+#
+# Enquanto não existir um projeto Supabase de TESTE/STAGING separado (com
+# seus próprios usuários de teste admin/gerente/vendedor), este workflow
+# vai FALHAR DE PROPÓSITO no primeiro step, com uma mensagem clara, em vez
+# de silenciosamente apontar para produção. Isso é intencional — não é bug.
+#
+# Para ativar de verdade, alguém precisa:
+#   1. Criar um projeto Supabase separado só para testes/staging.
+#   2. Rodar crm/supabase/schema.sql nele.
+#   3. Criar 3 usuários de teste (Auth + linha em profiles com status='ativo'
+#      e role admin/gerente/vendedor, um de cada).
+#   4. Configurar os secrets abaixo em GitHub → Settings → Secrets → Actions:
+#        STAGING_SUPABASE_URL
+#        STAGING_SUPABASE_ANON_KEY
+#        RLS_TEST_ADMIN_EMAIL / RLS_TEST_ADMIN_PASSWORD
+#        RLS_TEST_GERENTE_EMAIL / RLS_TEST_GERENTE_PASSWORD
+#        RLS_TEST_VENDEDOR_EMAIL / RLS_TEST_VENDEDOR_PASSWORD
+# ============================================================================
+
+on:
+  pull_request:
+    paths:
+      - "crm/supabase/schema.sql"
+      - "crm/src/app/api/**"
+
+jobs:
+  test-rls:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Bloquear se faltar credenciais de staging (nunca cair em produção)
+        run: |
+          if [ -z "${{ secrets.STAGING_SUPABASE_URL }}" ] || [ -z "${{ secrets.STAGING_SUPABASE_ANON_KEY }}" ]; then
+            echo "::error::Secrets STAGING_SUPABASE_URL/STAGING_SUPABASE_ANON_KEY não configurados neste repositório."
+            echo "::error::Este workflow está pendente de um projeto Supabase de teste/staging separado do de produção — ver comentário no topo de .github/workflows/rls-tests.yml e .claude/agents/rls-test-automation-agent.md."
+            echo "::error::Bloqueando o job de propósito em vez de rodar escrita real contra o Supabase de produção."
+            exit 1
+          fi
+
+      - name: Instalar dependências (workspace crm/)
+        working-directory: crm
+        run: npm install
+
+      - name: Rodar testes de RLS (crm/scripts/test-rls.mjs)
+        working-directory: crm
+        run: node scripts/test-rls.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+          TEST_ADMIN_EMAIL: ${{ secrets.RLS_TEST_ADMIN_EMAIL }}
+          TEST_ADMIN_PASSWORD: ${{ secrets.RLS_TEST_ADMIN_PASSWORD }}
+          TEST_GERENTE_EMAIL: ${{ secrets.RLS_TEST_GERENTE_EMAIL }}
+          TEST_GERENTE_PASSWORD: ${{ secrets.RLS_TEST_GERENTE_PASSWORD }}
+          TEST_VENDEDOR_EMAIL: ${{ secrets.RLS_TEST_VENDEDOR_EMAIL }}
+          TEST_VENDEDOR_PASSWORD: ${{ secrets.RLS_TEST_VENDEDOR_PASSWORD }}
+          # Confirmação explícita de que STAGING_SUPABASE_URL é um projeto de
+          # teste, não produção — responsabilidade de quem configurou os secrets.
+          RLS_TEST_CONFIRM_NOT_PRODUCTION: "true"

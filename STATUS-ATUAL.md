@@ -30,12 +30,12 @@
 | Deploy automático na `main` | ✅ Netlify redeploya a cada merge/push (CRM e landing, cada um no seu próprio site Netlify) |
 | Resend + SMTP no Supabase | ✅ Confirmado ao vivo: domínio `opsiscrm.com.br` com status "Verified" no Resend (resend.com/domains); Supabase Authentication → Emails → SMTP Settings (projeto `home_otica`) com "Enable custom SMTP" ativo, host `smtp.resend.com`, porta 465, remetente `noreply@opsiscrm.com.br`, nome "Ópsis CRM" |
 | PWA / multi-tenant | ⏳ Fase seguinte — `multi-tenant-migration-agent` já existe como definição, mas dormente até ativação explícita |
-| Automação de testes de RLS (`crm/scripts/test-rls.mjs` + CI) | ⏳ `rls-test-automation-agent` criado só como definição/escopo — script e workflow de CI ainda não existem de fato |
+| Automação de testes de RLS (`crm/scripts/test-rls.mjs` + CI) | 🟡 Script (`crm/scripts/test-rls.mjs`) e workflow (`.github/workflows/rls-tests.yml`) implementados de verdade — matriz conferida linha a linha contra `crm/supabase/schema.sql`, sem divergência. Validado apenas com `node --check` (sintaxe) e com env vars incompletas/fake (fail-fast e guarda anti-produção funcionam). **Não executado ponta a ponta contra um banco real**: só existe o Supabase de produção hoje, e o script se recusa a rodar contra ele por segurança. CI também bloqueia de propósito (secrets `STAGING_SUPABASE_URL`/etc. não configurados) até existir um projeto Supabase de teste/staging separado |
 
 ## Fazer agora (ordem)
 
 1. Revisar/decidir sobre a rotina de status diário pausada: esperar a Anthropic liberar allowlist de rede para rotinas, ou configurar um serviço de uptime externo (ex.: UptimeRobot, que monitora de fora e não sofre essa limitação) e ajustar a rotina para só reportar o repo.
-2. Implementar de verdade `crm/scripts/test-rls.mjs` e o workflow de CI (`.github/workflows/`) descritos em `rls-test-automation-agent` — hoje é só intenção/escopo.
+2. Criar um projeto Supabase de teste/staging separado do de produção (rodar `crm/supabase/schema.sql` nele + 3 usuários de teste admin/gerente/vendedor) e configurar os secrets `STAGING_SUPABASE_URL`/`STAGING_SUPABASE_ANON_KEY`/`RLS_TEST_*` no GitHub — só assim o CI de RLS (já implementado em `.github/workflows/rls-tests.yml`) sai do bloqueio proposital e roda de verdade.
 3. Fase 2 (multi-tenant) segue não iniciada — `multi-tenant-migration-agent` está pronto mas dormente, só ativa com pedido explícito do usuário.
 
 ## Contas envolvidas
