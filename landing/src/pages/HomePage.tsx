@@ -220,37 +220,6 @@ export default function HomePage() {
           </motion.article>
         </section>
 
-        <section className="about" id="sobre">
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <p className="eyebrow">Sobre a Da&apos;at</p>
-            <h2>Soluções em dados, automações e softwares</h2>
-            <p className="section-copy">
-              Juntamos desenvolvimento de software e trabalho com dados numa
-              coisa só: menos tarefa manual, menos número perdido em
-              planilha solta, e decisões que saem mais rápido.
-            </p>
-            <ul className="pillars">
-              <li>
-                <strong>Dados</strong>
-                <span>Números organizados para decisão, não só para relatório</span>
-              </li>
-              <li>
-                <strong>Automações</strong>
-                <span>Tarefas repetitivas rodando sozinhas, sem depender de alguém lembrar</span>
-              </li>
-              <li>
-                <strong>Softwares</strong>
-                <span>Sistema web construído para o seu processo, não o contrário</span>
-              </li>
-            </ul>
-          </motion.div>
-        </section>
-
         <section className="contact" id="contato">
           <motion.div
             className="contact-panel"
