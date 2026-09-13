@@ -1,6 +1,14 @@
 # Landing — Da'at Technologies
 
-One-page institucional (React + Vite + Framer Motion).
+Site institucional (React + Vite + Framer Motion) com três rotas: `/` (home), `/opsis` (galeria do Ópsis CRM) e `/sobre`.
+
+## Estrutura da home
+
+Hero → **Soluções** (4 cards: Landing Pages, Automações, Análise de Dados, Webapps para Empresas — cada um com dor, CTA de e-mail com `subject` próprio e, em três deles, um exemplo visual ilustrativo: `EcommerceMock.tsx`, `AutomationLoop.tsx`, `DataDashboards.tsx`) → **Ópsis CRM** (screenshot real do dashboard em produção, `public/screens/dashboard.png`) → **Contato**.
+
+A página `/sobre` tem a apresentação institucional e a seção "Como trabalhamos" (Entender/Propor/Construir/Acompanhar).
+
+Ver `HANDOFF.md` para detalhes de arquitetura, componentes e histórico de decisões.
 
 ## Desenvolvimento
 
