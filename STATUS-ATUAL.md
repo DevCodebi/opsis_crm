@@ -28,7 +28,7 @@
 | Rotina de status diário automatizada (`trig_012KARmKgXYbe3Tdf3XS8oTG`) | 🔴 Pausada (`enabled:false`) — sandbox de rotinas agendadas bloqueia egress de rede por política de plataforma (não é a mesma coisa que a tela Configurações → Capacidades, que só afeta sessões interativas); e-mail/push funcionam, checagem de Netlify/Supabase não |
 | Acesso remoto (Remote Control) para acompanhar sessões pelo celular | ✅ Configurado pelo usuário |
 | Deploy automático na `main` | ✅ Netlify redeploya a cada merge/push (CRM e landing, cada um no seu próprio site Netlify) |
-| Resend + SMTP no Supabase | 🟡 Confirmar Verified + SMTP se ainda não estiver |
+| Resend + SMTP no Supabase | ✅ Confirmado ao vivo: domínio `opsiscrm.com.br` com status "Verified" no Resend (resend.com/domains); Supabase Authentication → Emails → SMTP Settings (projeto `home_otica`) com "Enable custom SMTP" ativo, host `smtp.resend.com`, porta 465, remetente `noreply@opsiscrm.com.br`, nome "Ópsis CRM" |
 | PWA / multi-tenant | ⏳ Fase seguinte — `multi-tenant-migration-agent` já existe como definição, mas dormente até ativação explícita |
 | Automação de testes de RLS (`crm/scripts/test-rls.mjs` + CI) | ⏳ `rls-test-automation-agent` criado só como definição/escopo — script e workflow de CI ainda não existem de fato |
 
@@ -36,9 +36,7 @@
 
 1. Revisar/decidir sobre a rotina de status diário pausada: esperar a Anthropic liberar allowlist de rede para rotinas, ou configurar um serviço de uptime externo (ex.: UptimeRobot, que monitora de fora e não sofre essa limitação) e ajustar a rotina para só reportar o repo.
 2. Implementar de verdade `crm/scripts/test-rls.mjs` e o workflow de CI (`.github/workflows/`) descritos em `rls-test-automation-agent` — hoje é só intenção/escopo.
-3. Confirmar Resend domínio **Verified** + SMTP no Supabase (se ainda faltar).
-4. Confirmar Auth URL Configuration com `https://opsiscrm.com.br` (revalidar após a correção de reset de senha desta sessão).
-5. Fase 2 (multi-tenant) segue não iniciada — `multi-tenant-migration-agent` está pronto mas dormente, só ativa com pedido explícito do usuário.
+3. Fase 2 (multi-tenant) segue não iniciada — `multi-tenant-migration-agent` está pronto mas dormente, só ativa com pedido explícito do usuário.
 
 ## Contas envolvidas
 
