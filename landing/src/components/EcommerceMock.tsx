@@ -188,7 +188,7 @@ export function EcommerceMock() {
 }
 
 function ProductIcon({ kind }: { kind: IconKind }): ReactNode {
-  const common = { width: 26, height: 26, viewBox: "0 0 24 24", className: "ecom-swatch-icon" };
+  const common = { width: 56, height: 56, viewBox: "0 0 24 24", className: "ecom-swatch-icon" };
 
   switch (kind) {
     case "dress":
