@@ -1176,6 +1176,16 @@ main,
   gap: 0.75rem;
 }
 
+.mini-dash-kpis--compact {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 20rem;
+}
+
+.mini-dash-kpis--stacked {
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+
 .mini-dash-kpis small {
   display: block;
   opacity: 0.75;
@@ -1189,17 +1199,182 @@ main,
   letter-spacing: -0.02em;
 }
 
-.mini-dash-chart {
+/* Vendas: sparkline de tendência */
+.mini-dash-sparkline {
   display: flex;
   align-items: flex-end;
-  gap: 0.5rem;
-  height: 84px;
+  gap: 0.4rem;
+  height: 56px;
 }
 
-.mini-dash-chart i {
+.mini-dash-sparkline i {
   flex: 1;
   display: block;
-  border-radius: 0.35rem 0.35rem 0.1rem 0.1rem;
+  border-radius: 0.3rem 0.3rem 0.1rem 0.1rem;
+}
+
+/* Vendas: ranking de produtos mais vendidos */
+.mini-dash-ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.mini-dash-ranking-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  margin-bottom: 0.25rem;
+}
+
+.mini-dash-ranking-bar {
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.mini-dash-ranking-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+/* Logística: trilha de rota */
+.route-track {
+  display: flex;
+  align-items: center;
+}
+
+.route-segment {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.route-segment:last-child {
+  flex: 0 0 auto;
+}
+
+.route-stop {
+  position: relative;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+  display: block;
+}
+
+.route-stop--done {
+  background: #7ec488;
+  border-color: #7ec488;
+}
+
+.route-stop--current {
+  background: #4f8fe0;
+  border-color: #4f8fe0;
+}
+
+.route-stop--pending {
+  background: transparent;
+}
+
+.route-pulse {
+  position: absolute;
+  inset: -0.35rem;
+  border-radius: 50%;
+  background: rgba(79, 143, 224, 0.55);
+}
+
+.route-line {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  min-width: 0.75rem;
+}
+
+/* Logística: lista de entregas com status */
+.mini-dash-deliveries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.mini-dash-deliveries li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.status-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.status-badge--entregue {
+  background: rgba(126, 196, 136, 0.18);
+  color: #7ec488;
+}
+
+.status-badge--em-rota {
+  background: rgba(79, 143, 224, 0.18);
+  color: #4f8fe0;
+}
+
+.status-badge--atrasado {
+  background: rgba(224, 87, 79, 0.18);
+  color: #e0574f;
+}
+
+/* Saúde: gauge + fila de atendimento */
+.mini-dash-gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.mini-dash-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.mini-dash-queue li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.queue-code {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #4fd1c5;
+}
+
+.queue-wait {
+  color: var(--ink-soft);
+  font-size: 0.76rem;
 }
 
 /* Paletas por área — única exceção intencional à paleta oliva da marca,
@@ -1212,8 +1387,12 @@ main,
   color: #e0a458;
 }
 
-.mini-dash[data-area="vendas"] .mini-dash-chart i {
+.mini-dash[data-area="vendas"] .mini-dash-sparkline i {
   background: linear-gradient(180deg, #e0a458, #8fbf6b);
+}
+
+.mini-dash[data-area="vendas"] .mini-dash-ranking-bar i {
+  background: linear-gradient(90deg, #8fbf6b, #e0a458);
 }
 
 .mini-dash[data-area="logistica"] {
@@ -1224,10 +1403,6 @@ main,
   color: #4f8fe0;
 }
 
-.mini-dash[data-area="logistica"] .mini-dash-chart i {
-  background: linear-gradient(180deg, #4f8fe0, #e08a4f);
-}
-
 .mini-dash[data-area="saude"] {
   background: linear-gradient(160deg, #10302c, #0b201d 55%, #123a34);
 }
@@ -1236,8 +1411,11 @@ main,
   color: #4fd1c5;
 }
 
-.mini-dash[data-area="saude"] .mini-dash-chart i {
-  background: linear-gradient(180deg, #4fd1c5, #eafffb);
+@media (max-width: 640px) {
+  .mini-dash-gauge-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1299,34 +1477,115 @@ main,
 }
 
 /* —— Mockup ilustrativo de e-commerce (card "Landing Pages") —— */
+.ecom-mock-wrap {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ecom-store-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.ecom-store-tab {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.ecom-store-tab:hover {
+  color: var(--ink);
+  border-color: rgba(163, 177, 138, 0.45);
+}
+
+.ecom-store-tab.is-active {
+  color: #12150e;
+  background: var(--olive-bright);
+  border-color: var(--olive-bright);
+}
+
 .ecom-mock.screen {
   transform: none;
 }
 
 .ecom-body {
-  padding: 1rem 1.15rem 1.3rem;
+  padding: 0;
   display: grid;
-  gap: 1rem;
+  gap: 0;
 }
 
-.ecom-top {
+.ecom-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.6rem;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .ecom-logo {
   font-family: var(--font-display);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   letter-spacing: 0.06em;
   color: var(--ink);
+  white-space: nowrap;
+}
+
+.ecom-nav-items {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.ecom-nav-items span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.ecom-banner {
+  margin: 1rem 1.15rem 0;
+  border-radius: 0.75rem;
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-height: 4.5rem;
+}
+
+.ecom-banner-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.ecom-banner-cta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #14160f;
+  white-space: nowrap;
 }
 
 .ecom-tabs {
   display: flex;
   gap: 0.4rem;
+  padding: 1rem 1.15rem 0;
 }
 
 .ecom-tab {
@@ -1356,6 +1615,7 @@ main,
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.65rem;
+  padding: 1rem 1.15rem 1.3rem;
 }
 
 .ecom-product {
@@ -1364,28 +1624,41 @@ main,
 }
 
 .ecom-swatch {
+  position: relative;
   aspect-ratio: 3 / 4;
   border-radius: 0.5rem;
   border: 1px solid rgba(0, 0, 0, 0.15);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.ecom-swatch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), transparent 60%);
+}
+
+.ecom-swatch-icon {
+  position: relative;
+  z-index: 1;
+  color: rgba(0, 0, 0, 0.32);
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.15));
 }
 
 .ecom-name {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--ink-soft);
   line-height: 1.3;
 }
 
 .ecom-price {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--ink);
 }
 
-@media (max-width: 480px) {
-  .ecom-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 
 @media (max-width: 480px) {
   .crm-table > div {
