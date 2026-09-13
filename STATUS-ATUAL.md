@@ -1,6 +1,6 @@
 # Ópsis CRM — Status atual
 
-**Atualizado em:** 12/09/2026  
+**Atualizado em:** 13/09/2026  
 **Documento completo:** ver `DOCUMENTACAO.md` (seção Publicação / checkpoints).
 
 ## Onde estamos
@@ -21,6 +21,7 @@
 | Sidebar: handle flutuante na borda p/ recolher/expandir (substitui botão duplicado no Header), logo maior (74px) quando expandida, legenda "By Ópsis CRM" removida | ✅ Publicado (PR #16, commits `09ad3be`/`a50f0f6`/`bc08d37`, merge `dc68079`) |
 | Landing institucional Da'at Technologies (`landing/`, Vite+React+TS) | ✅ Mesclada em `main` (PR #10, merge `fe77ade`) — e-mail de contato corrigido para `contato@devcodebi.com` em todo o código (commit `b233bce`) |
 | Netlify do site `daattechnologies` | ✅ Reconfigurado para production branch `main`; deploy no ar confirmado (`daattechnologies.netlify.app` responde 200) — configuração feita no painel Netlify, não verificável via repo |
+| Domínio próprio `daattechnologies.com.br` | 🟡 Adicionado como domínio primário no Netlify (`www` como alias com redirect) e "Set up Netlify DNS" ativado; nameservers do domínio trocados na Hostinger para os 4 do Netlify (`dns1-4.p04.nsone.net`) nesta sessão (13/09/2026) — aguardando propagação (até 24h) e emissão automática do certificado HTTPS (Netlify tenta de novo sozinho, ou forçar em "Verify DNS configuration"). Falta confirmar depois que `daattechnologies.com.br` e `www.daattechnologies.com.br` respondem 200 com HTTPS válido |
 | Agentes de projeto versionados em `.claude/agents/` | ✅ 10 agentes: 4 originais nunca commitados antes — `deploy-release-agent`, `frontend-ux-agent`, `rls-security-tester`, `schema-guardian` (commit `dfeb658`) — + 6 novos — `monitoring-agent`, `docs-consistency-agent`, `infra-watchdog-agent`, `multi-tenant-migration-agent` (dormente), `rls-test-automation-agent`, `branding-agent` (commit `8fa6f1c`) |
 | Material de marca do Ópsis CRM versionado (`docs/brand/`) | ✅ Trazido para o repo nesta sessão (antes só existia no OneDrive do usuário) — guia de marca + ativos (commit `8fa6f1c`) |
 | Rotina de status diário automatizada (`trig_012KARmKgXYbe3Tdf3XS8oTG`) | 🔴 Pausada (`enabled:false`) — sandbox de rotinas agendadas bloqueia egress de rede por política de plataforma (não é a mesma coisa que a tela Configurações → Capacidades, que só afeta sessões interativas); e-mail/push funcionam, checagem de Netlify/Supabase não |
@@ -32,7 +33,7 @@
 
 ## Fazer agora (ordem)
 
-1. Apontar o domínio `daattechnologies.com.br` (já adquirido pelo usuário) para o projeto Netlify `daattechnologies` (Domain management) + configurar DNS na Hostinger.
+1. 🟡 Apontar o domínio `daattechnologies.com.br` para o projeto Netlify `daattechnologies` — DNS configurado nesta sessão (13/09/2026), aguardando propagação (~24h); confirmar depois que o domínio e o `www` respondem 200 com HTTPS válido.
 2. Revisar/decidir sobre a rotina de status diário pausada: esperar a Anthropic liberar allowlist de rede para rotinas, ou configurar um serviço de uptime externo (ex.: UptimeRobot, que monitora de fora e não sofre essa limitação) e ajustar a rotina para só reportar o repo.
 3. Implementar de verdade `crm/scripts/test-rls.mjs` e o workflow de CI (`.github/workflows/`) descritos em `rls-test-automation-agent` — hoje é só intenção/escopo.
 4. Confirmar Resend domínio **Verified** + SMTP no Supabase (se ainda faltar).
