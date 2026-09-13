@@ -11,7 +11,7 @@ type Solution = {
   id: string;
   title: string;
   pain: string;
-  example: string;
+  example?: string;
   mailSubject: string;
   ctaLabel: string;
   exampleLink?: { to: string; label: string };
@@ -22,7 +22,6 @@ const SOLUTIONS: Solution[] = [
     id: "landing-pages",
     title: "Landing Pages",
     pain: "O primeiro contato com o cliente costuma ser uma página — e ela só passa credibilidade se for pensada pra isso.",
-    example: "Este site é nosso próprio trabalho, projetado e publicado pela Da'at.",
     mailSubject: "Landing%20Page%20—%20Da'at",
     ctaLabel: "Quero uma landing page",
   },
@@ -39,7 +38,7 @@ const SOLUTIONS: Solution[] = [
     id: "dados",
     title: "Análise de Dados",
     pain: "Quando os números disponíveis não mostram o que realmente importa, a decisão acaba no feeling.",
-    example: "Três setores diferentes — o mesmo tipo de painel que já roda no Ópsis CRM.",
+    example: "Exemplos ilustrativos.",
     mailSubject: "Análise%20de%20Dados%20—%20Da'at",
     ctaLabel: "Quero organizar meus dados",
   },
@@ -130,7 +129,7 @@ export default function HomePage() {
                 <p className="eyebrow">{String(index + 1).padStart(2, "0")}</p>
                 <h3>{solution.title}</h3>
                 <p className="solution-pain">{solution.pain}</p>
-                <p className="solution-example">{solution.example}</p>
+                {solution.example && <p className="solution-example">{solution.example}</p>}
 
                 {solution.id === "landing-pages" && (
                   <div className="solution-visual">
